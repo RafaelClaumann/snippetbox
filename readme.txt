@@ -87,3 +87,10 @@ Chapter 2
 
             If you want to send a non-200 status code and a plain-text response body then it’s a good opportunity to use the http.Error() shortcut.
             It’s quite rare to use the w.Write() and w.WriteHeader() methods directly.
+        
+        The net/http constants
+
+            Use constants from the net/http package for HTTP methods and status codes, instead of writing the strings and integers.
+            We can use the constant http.MethodPost instead of the string "POST".
+
+            https://pkg.go.dev/net/http#pkg-constants
