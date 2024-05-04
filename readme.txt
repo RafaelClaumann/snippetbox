@@ -1,4 +1,4 @@
-Chapter 2
+Chapter 2 Foundations
     2.1 Project setup and creating a module
             go mod init snippetbox.claumann.net
 
@@ -160,3 +160,21 @@ Chapter 2
             https://stackoverflow.com/a/27946132/15308818
 
             This handler remove the leading slash from the URL path and then search the ./ui/static directory.
+
+Chapter 3 Configuration and error handling
+
+    3.1 Managing configuration settings
+
+            Our web application’s main.go file currently contains a couple of hard-coded configuration settings:
+                - The network address for the server to listen on (currently ":4000")
+                - The file path for the static files directory (currently "./ui/static")
+            There’s no separation between our configuration settings and code, and we can’t change the settings at runtime.
+        
+        Command-line flags
+            A common and idiomatic way to manage configuration settings is to use command-line flags when starting an application.
+
+            This defines a new command-line flag with the name addr, a default value of ":4000" and
+            some short help text explaining what the flag controls.
+                addr := flag.String("addr", ":4000", "HTTP network address")
+
+            go run ./cmd/web -addr=":8080"
