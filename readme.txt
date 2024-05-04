@@ -206,3 +206,9 @@ Chapter 3 Configuration and error handling
                 flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
 
                 flag.Parse()
+    
+    3.2 Leveled logging
+
+        In our application, we can break apart our log messages into two distinct types — or levels.
+        The first type is informational messages and the second type is error messages.
+        The simple and clear approach is use the log.New() function to create two new custom loggers.
