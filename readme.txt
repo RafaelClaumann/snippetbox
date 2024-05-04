@@ -105,3 +105,14 @@ Chapter 2
         or the empty string "" if no matching parameter exists.
 
         For the purpose of our Snippetbox application, we want to check that it contains a positive integer value.
+
+    2.6 Project structure and organization
+
+        The cmd directory will contain the application-specific code for the executable applications in the project.
+        
+        The internal directory will contain the ancillary non-application-specific code used in the project.
+        We’ll use it to hold potentially reusable code like validation helpers and the SQL database models for the project.
+
+        The ui directory will contain the user-interface assets used by the web application.
+
+        
