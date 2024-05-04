@@ -78,3 +78,7 @@ Chapter 2
 
             It’s only possible to call w.WriteHeader() once per response, and after the status code has been written it can’t be changed.
             If you don’t call w.WriteHeader() explicitly, then the first call to w.Write() will automatically send a 200 OK status code to the user.
+        
+        Customizing headers
+
+            Changing the response header map after a call to w.WriteHeader() or w.Write() will have no effect on the headers that the user receives.
