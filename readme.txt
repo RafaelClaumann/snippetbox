@@ -136,3 +136,12 @@ Chapter 2
 
             We use the ExecuteTemplate() method to tell Go that we specifically want to respond using the content of the
             base template (which in turn invokes our title and main templates).
+        
+        Embedding partials
+
+            For some applications you might want to break out certain bits of HTML into partials that can be reused in different pages or layouts.
+
+            Create ui/html/partials/nav.tmpl containing a named template called "nav".
+            Update the base template so that it invokes the navigation partial using the {{template "nav" .}} action.
+            Update the home handler to include the new ui/html/partials/nav.tmpl file when parsing the template files.
+            The base template should now invoke the nav template.
