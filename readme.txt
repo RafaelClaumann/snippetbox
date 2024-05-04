@@ -257,3 +257,14 @@ Chapter 3 Configuration and error handling
             The pattern that we’re using to inject dependencies won’t work if your handlers are spread across multiple packages.
             In that case, an alternative approach is to create a config package exporting an Application struct and have your
             handler functions close over this to form a closure.
+    
+    3.4 Centralized error handling
+
+            Let’s neaten up our application by moving some of the error handling code into helper methods.
+            This will help separate our concerns and stop us repeating code as we progress through the build.
+
+            Add a new helpers.go file under the cmd/web directory.
+
+            We use the debug.Stack() function to get a stack trace for the current goroutine and append it to the log message.
+            We use the http.StatusText() function to automatically generate a human-friendly text representation of a given HTTP status code.
+            For example, http.StatusText(400) will return the string "Bad Request".
