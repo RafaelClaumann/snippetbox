@@ -209,6 +209,20 @@ Chapter 3 Configuration and error handling
     
     3.2 Leveled logging
 
-        In our application, we can break apart our log messages into two distinct types — or levels.
-        The first type is informational messages and the second type is error messages.
-        The simple and clear approach is use the log.New() function to create two new custom loggers.
+            In our application, we can break apart our log messages into two distinct types — or levels.
+            The first type is informational messages and the second type is error messages.
+            The simple and clear approach is use the log.New() function to create two new custom loggers.
+
+        Decoupled logging
+
+            A big benefit of logging your messages to the standard streams (stdout and stderr) like we are is that your
+            application and logging are decoupled.
+
+            During development, it’s easy to view the log output because the standard streams are displayed in the terminal
+
+            In staging or production environments, you can redirect the streams to a final destination for viewing and archival.
+            This destination could be on-disk files, or a logging service such as Splunk.
+
+            We could redirect the stdout and stderr streams to on-disk files when starting the application like so:
+
+                $ go run ./cmd/web >>/tmp/info.log 2>>/tmp/error.log
