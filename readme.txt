@@ -268,3 +268,8 @@ Chapter 3 Configuration and error handling
             We use the debug.Stack() function to get a stack trace for the current goroutine and append it to the log message.
             We use the http.StatusText() function to automatically generate a human-friendly text representation of a given HTTP status code.
             For example, http.StatusText(400) will return the string "Bad Request".
+
+            What we want to report is the file name and line number one step back in the stack trace, which would give
+            us a clearer idea of where the error actually originated from.
+
+            We can do this by changing the serverError()  helper to use our logger’s Output() function and setting the frame depth to 2.
