@@ -1,0 +1,25 @@
+version: '3.1'
+
+services:
+
+  database:
+    image: mysql
+    container_name: snippet-db
+    environment:
+      MYSQL_USER: web
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: pass
+    ports:
+      - 3306:3306
+    volumes:
+        - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+
+  # server:   snippet-db
+  # user:     root or web
+  # password: pass
+  # database: snippetbox
+  adminer: 
+    image: adminer
+    container_name: adminer-tool
+    ports:
+      - 9090:8080
