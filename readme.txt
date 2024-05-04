@@ -278,3 +278,15 @@ Chapter 3 Configuration and error handling
 
             Our main() function is beginning to get a bit crowded, so to keep it clear and focused I’d
             like to move the route declarations for the application into a standalone routes.go file.
+
+Chapter 4 Setting up MySQL
+
+    4.2 Installing a database driver
+
+        To use MySQL from our Go web application we need to install a database driver.
+        https://github.com/golang/go/wiki/SQLDrivers
+
+        Go to your project directory and run the go get command:
+            go get github.com/go-sql-driver/mysql@v1
+        If you want to download a specific version of a package:
+            go get github.com/go-sql-driver/mysql@v1.0.3
