@@ -36,3 +36,36 @@ Chapter 2
             if — and only if —the request URL path exactly matches "/".
 
             It’s not possible to change the behavior of Go’s servemux to do this, but you can include a simple check in the home handler.
+
+        The DefaultServeMux
+
+            The http.Handle() and http.HandleFunc() allow you to register routes without declaring a servemux.
+                
+                http.HandleFunc("/", home)
+                http.HandleFunc("/snippet/view", snippetView)
+                http.HandleFunc("/snippet/create", snippetCreate)
+
+            Behind the scenes, these functions register their routes with something called the DefaultServeMux.
+
+            DefaultServeMux is a global variable, any package can access it and register a route — including any third-party packages
+            that your application imports. If one of those third-party packages is compromised, they could use DefaultServeMux to 
+            expose a malicious handler to the web.
+
+            It’s generally a good idea to avoid DefaultServeMux and the corresponding helper functions.
+            Use your own locally-scoped servemux instead
+        
+        Additional information
+
+            In Go’s servemux, longer URL patterns always take precedence over shorter ones.
+            It will always dispatch the request to the handler corresponding to the longest pattern.
+            You can register patterns in any order and it won’t change how the servemux behaves.
+
+            It’s possible to include host names in your URL patterns.
+                mux.HandleFunc("foo.example.org/", fooHandler)
+                mux.HandleFunc("bar.example.org/", barHandler)
+                mux.HandleFunc("/baz", bazHandler)
+            Only when there isn’t a host-specific match found will the non-host specific patterns also be checked.
+
+        What about RESTful routing?
+            
+            Go’s servemux doesn’t support routing based on the request method, URLs with variables in them and regexp-based patterns.
