@@ -150,5 +150,13 @@ Chapter 2
 
             Improve the look and feel of the home page by adding some static CSS and image files.
         
-        
+        The http.Fileserver handler
+            Go’s net/http package ships with a built-in http.FileServer handler which you can use
+            to serve files over HTTP from a specific directory.
 
+            Let’s add a new route to our application so that all requests which begin with "/static/" are handled using this.
+            The pattern "/static/" is a subtree path pattern, so it acts a bit like there is a wildcard at the end.
+
+            https://stackoverflow.com/a/27946132/15308818
+
+            This handler remove the leading slash from the URL path and then search the ./ui/static directory.
