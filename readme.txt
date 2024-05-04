@@ -273,3 +273,8 @@ Chapter 3 Configuration and error handling
             us a clearer idea of where the error actually originated from.
 
             We can do this by changing the serverError()  helper to use our logger’s Output() function and setting the frame depth to 2.
+    
+    3.5 Isolating the application routes
+
+            Our main() function is beginning to get a bit crowded, so to keep it clear and focused I’d
+            like to move the route declarations for the application into a standalone routes.go file.
