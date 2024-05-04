@@ -178,3 +178,31 @@ Chapter 3 Configuration and error handling
                 addr := flag.String("addr", ":4000", "HTTP network address")
 
             go run ./cmd/web -addr=":8080"
+        
+        Type conversions
+            Go also has a range of other functions including flag.Int(), flag.Bool() and flag.Float64().
+            These work in exactly the same way as flag.String().
+
+        Automated help
+            You can use the -help flag to list all the available command-line flags for an application.
+            
+            $ go run ./cmd/web -help
+                Usage of /tmp/go-build3672328037/b001/exe/web:
+                    -addr string
+                        HTTP network address (default ":4000")
+        
+        Pre-existing variables
+            It’s possible to parse command-line flag values into the memory addresses of pre-existing variables,
+            using the flag.StringVar(), flag.IntVar(), flag.BoolVar() and other functions.
+
+                type config struct {
+                    addr      string
+                    staticDir string
+                }
+
+                var cfg config
+
+                flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
+                flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
+
+                flag.Parse()
