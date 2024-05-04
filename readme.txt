@@ -234,3 +234,20 @@ Chapter 3 Configuration and error handling
 
             We need to initialize a new http.Server struct containing the configuration settings for our server,
             instead of using the http.ListenAndServe() shortcut.
+    
+    3.3 Dependency injection
+
+            If you open up your handlers.go file you’ll notice that the home handler function is still
+            writing error messages using Go’s standard logger, not the errorLog logger that we want to be using.
+
+            How can we make our new errorLog logger available to our home function from main()?
+
+            The simplest way is just put the dependencies in global variables.
+            But it is good practice to inject dependencies into your handlers.
+            It makes your code more explicit, less error-prone and easier to unit test than if you use global variables.
+
+            For applications where all your handlers are in the same package, like ours,
+            a neat way toinject dependencies is to put them into a custom application struct,
+            and then define your handler functions as methods against application.
+
+            https://www.geeksforgeeks.org/how-to-add-a-method-to-struct-type-in-golang/
