@@ -118,4 +118,11 @@ Chapter 2
         It’s important to point out that the directory name internal carries a special meaning and behavior in Go:
         any packages which live under this directory can only be imported by code inside the parent of the internal directory.
         In our case, this means that any packages which live in internal can only be imported by code inside our snippetbox project directory.
-        
+
+    2.7 HTML templating and inheritance
+
+        The .tmpl extension doesn’t convey any special meaning or behavior here.
+        I’ve only chosen this extension because it’s a nice way of making it clear that the file
+        contains a Go template when you’re browsing a list of files.
+
+        Use Go’s html/template package, which provides a family of functions for safely parsing and rendering HTML templates.
