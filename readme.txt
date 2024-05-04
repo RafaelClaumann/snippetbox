@@ -82,3 +82,8 @@ Chapter 2
         Customizing headers
 
             Changing the response header map after a call to w.WriteHeader() or w.Write() will have no effect on the headers that the user receives.
+
+        The http.Error shortcut
+
+            If you want to send a non-200 status code and a plain-text response body then it’s a good opportunity to use the http.Error() shortcut.
+            It’s quite rare to use the w.Write() and w.WriteHeader() methods directly.
