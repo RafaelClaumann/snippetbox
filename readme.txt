@@ -226,3 +226,11 @@ Chapter 3 Configuration and error handling
             We could redirect the stdout and stderr streams to on-disk files when starting the application like so:
 
                 $ go run ./cmd/web >>/tmp/info.log 2>>/tmp/error.log
+        
+        The http.Server error log
+
+            By default, if Go’s HTTP server encounters an error it will log it using the standard logger.
+            For consistency it’d be better to use our new errorLog logger instead.
+
+            We need to initialize a new http.Server struct containing the configuration settings for our server,
+            instead of using the http.ListenAndServe() shortcut.
