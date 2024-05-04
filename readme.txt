@@ -94,3 +94,14 @@ Chapter 2
             We can use the constant http.MethodPost instead of the string "POST".
 
             https://pkg.go.dev/net/http#pkg-constants
+    
+    2.5 URL query strings
+
+        Update the snippetView handler so that it accepts an id query string parameter from the user.
+            
+            /snippet/view?id=1
+        
+        The r.URL.Query().Get() method will always return a string value for a parameter,
+        or the empty string "" if no matching parameter exists.
+
+        For the purpose of our Snippetbox application, we want to check that it contains a positive integer value.
