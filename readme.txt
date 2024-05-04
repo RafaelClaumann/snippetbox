@@ -69,3 +69,12 @@ Chapter 2
         What about RESTful routing?
             
             Go’s servemux doesn’t support routing based on the request method, URLs with variables in them and regexp-based patterns.
+
+    2.4 Customizing HTTP headers
+
+            Update our application so that the /snippet/create route only responds to HTTP requests which use the POST method.
+        
+        HTTP status codes
+
+            It’s only possible to call w.WriteHeader() once per response, and after the status code has been written it can’t be changed.
+            If you don’t call w.WriteHeader() explicitly, then the first call to w.Write() will automatically send a 200 OK status code to the user.
