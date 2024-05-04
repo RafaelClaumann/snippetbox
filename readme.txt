@@ -145,3 +145,10 @@ Chapter 2
             Update the base template so that it invokes the navigation partial using the {{template "nav" .}} action.
             Update the home handler to include the new ui/html/partials/nav.tmpl file when parsing the template files.
             The base template should now invoke the nav template.
+    
+    2.8 Serving static files
+
+            Improve the look and feel of the home page by adding some static CSS and image files.
+        
+        
+
