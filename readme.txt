@@ -312,3 +312,36 @@ Chapter 4 Setting up MySQL
             
             You can run go mod tidy, which will automatically remove any unused packages from your go.mod and go.sum files.
                 go mod tidy -v
+
+    4.4 Creating a database connection pool
+
+            We need Go’s sql.Open() function to connect to the database from our web application.
+
+                // The sql.Open() function initializes a new sql.DB object, which is essentially a
+                // pool of database connections.
+                db, err := sql.Open("mysql", "web:pass@/snippetbox?parseTime=true")
+                if err != nil { ... }
+
+            The parseTime=true part of the DSN above is a driver-specific parameter which instructs
+            our driverto convert SQL TIME and DATE fields to Go time.Time object.
+
+            The sql.Open() function returns a sql.DB object.
+            This isn’t a database connection — it’s a pool of many connections.
+            This is an important difference to understand.
+            Go manages the connections in this pool as needed, automatically opening 
+            and closing connections to the database via the driver.
+
+            The connection pool is intended to be long-lived.
+            In a web application it’s normal to initialize the connection pool in 
+            your main() function and then pass the pool to your handlers.
+        
+        Usage in our web application
+
+            Notice how the import path for our driver is prefixed with an underscore?
+            This is because our main.go file doesn’t actually use anything in the mysql package.
+            So if we try to import it normally the Go compiler will raise an error.
+            We need the driver’s init() function to run so that it can register itself with the database/sql package.
+
+            The sql.Open() function doesn’t actually create any connections, all it does is initialize the pool for future use.
+            Actual connections to the database are established lazily, as and when needed for the first time.
+            To verify that everything is set up correctly we need to use the db.Ping() method to create a connection and check for any errors.
