@@ -345,3 +345,13 @@ Chapter 4 Setting up MySQL
             The sql.Open() function doesn’t actually create any connections, all it does is initialize the pool for future use.
             Actual connections to the database are established lazily, as and when needed for the first time.
             To verify that everything is set up correctly we need to use the db.Ping() method to create a connection and check for any errors.
+
+    4.5 Designing a database model
+
+            W’re going to sketch out a database model, you might want to think of it as a service layer or data access layer instead.
+            We will encapsulate the code for working with MySQL in a separate package to the rest of our application.
+
+            Create a new internal/models directory containing a snippets.go
+
+            Snippet struct will represent the data for an individual snippet.
+            SnippetModel type with methods on it to access and manipulate the snippets in our database.
