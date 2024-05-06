@@ -355,3 +355,17 @@ Chapter 4 Setting up MySQL
 
             Snippet struct will represent the data for an individual snippet.
             SnippetModel type with methods on it to access and manipulate the snippets in our database.
+
+        Using the SnippetModel
+
+            To use this model in our handlers we need to establish a new SnippetModel struct in our
+            main() function and then inject it as a dependency via the application struct.
+        
+        Benefits of this structure
+
+            Separation of concerns.
+            Database logic isn’t tied to our handlers which means that handler responsibilities are limited to HTTP stuff.
+            Easier to write tight, focused, unit tests in the future.
+
+            We have total control over which database is used at runtime, just by using the -dsn command-line flag.
+            
