@@ -290,3 +290,25 @@ Chapter 4 Setting up MySQL
             go get github.com/go-sql-driver/mysql@v1
         If you want to download a specific version of a package:
             go get github.com/go-sql-driver/mysql@v1.0.3
+
+    4.3 Modules and reproducible builds
+
+            The new lines in go.mod essentially tells the Go command which exact version of github.com/go-sql-driver/mysql 
+            should be used when you run a command like go run, go test or go build from your project directory.
+
+            The go.sum file contains the cryptographic checksums representing the content of the required packages.
+            The go.sum file isn’t designed to be human-editable and generally you won’t need to open it.
+        
+        Upgrading packages
+            To upgrade to latest available minor or patch release of a package, you can simply run go get with the -u flag:
+                go get -u github.com/foo/bar
+            
+            If you want to upgrade to a specific version then you should run the same command but with the appropriate @version suffix:
+                go get -u github.com/foo/bar@v2.0.0
+            
+        Removing unused packages
+            You could either run go get and postfix the package path with @none:
+                go get github.com/foo/bar@none
+            
+            You can run go mod tidy, which will automatically remove any unused packages from your go.mod and go.sum files.
+                go mod tidy -v
