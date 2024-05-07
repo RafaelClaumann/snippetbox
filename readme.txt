@@ -431,3 +431,28 @@ Chapter 4 Setting up MySQL
                         |  4 | O snail                | 2024-05-14 02:03:51 |
                         +----+------------------------+---------------------+
                         4 rows in set (0.00 sec)
+
+    4.7 Single-record SQL queries
+
+            The pattern for SELECTing a single record from the database is a little more complicated.
+            Let’s explain how to do it by updating our SnippetModel.Get() method so that it returns a single specific snippet based on its ID.
+    
+            We’ll need to run the following SQL query on the database:
+                SELECT  id, title, content, created, expires
+                FROM    snippets
+                WHERE   expires > UTC_TIMESTAMP() AND
+                        id = ?
+            
+            Your  driver will automatically convert the raw output from the SQL database to the required native Go types:
+                - CHAR, VARCHAR and TEXT map to string.
+                - BOOLEAN maps to bool.
+                - INT maps to int; BIGINT maps to int64.
+                - DECIMAL and NUMERIC map to float.
+                - TIME, DATE and TIMESTAMP map to time.Time.
+            
+            We used the parseTime=true parameter in our DSN to force it to convert TIME and DATE fields to time.Time.
+            Otherwise it returns these as []byte objects.
+
+            We’re returning the ErrNoRecord error from our SnippetModel.Get() method, instead of sql.ErrNoRows
+            to encapsulate the model completely, so that our application isn’t concerned with the underlying 
+            datastore or reliant on datastore-specific errors for its behavior.
