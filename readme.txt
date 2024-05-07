@@ -456,3 +456,43 @@ Chapter 4 Setting up MySQL
             We’re returning the ErrNoRecord error from our SnippetModel.Get() method, instead of sql.ErrNoRows
             to encapsulate the model completely, so that our application isn’t concerned with the underlying 
             datastore or reliant on datastore-specific errors for its behavior.
+        
+        Using the model in our handlers
+
+            Update the snippetView handler so that it returns the data for a specific record as a HTTP response.
+        
+        Checking for specific errors
+
+            Prior to Go 1.13, the idiomatic way to check errors was to use the equality operator ==, like so:
+                if err == models.ErrNoRecord {
+                    app.notFound(w)
+                } else {
+                    app.serverError(w, err)
+                }
+            It’s now safer and best practice to use the errors.Is() function instead.
+            
+            Go 1.13 introduced the ability to add additional information to errors by wrapping them.
+            If an error happens to get wrapped, a entirely new error value is created — which in turn
+            means that it’s not possible to check the value of the original underlying error using the regular == equality operator.
+
+            In contrast, the errors.Is() function works by unwrapping errors as necessary before checking for a match.
+
+        Shorthand single-record queries
+
+            You can shorten the SnippetModel.Get() slightly by leveraging the fact
+            that errors from DB.QueryRow()are deferred until Scan() is called.
+
+            func (m *SnippetModel) Get(id int) (*Snippet, error) {
+                s := &Snippet{}
+                
+                err := m.DB.QueryRow("SELECT ...", id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+                if err != nil {
+                    if errors.Is(err, sql.ErrNoRows) {
+                        return nil, ErrNoRecord
+                    } else {
+                        return nil, err
+                    }
+                }
+
+                return s, nil
+            }
