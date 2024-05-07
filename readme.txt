@@ -496,3 +496,16 @@ Chapter 4 Setting up MySQL
 
                 return s, nil
             }
+    
+    4.8 Multiple-record SQL queries
+
+        Let’s look at the pattern for executing SQL statements which return
+        multiple rows in SnippetModel.Latest() method using m.DB.Query(stmt).
+        https://pkg.go.dev/database/sql#DB.Query
+
+            SELECT  id, title, content, created, expires
+            FROM    snippets
+            WHERE   expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10
+        
+        Closing a resultset with defer rows.Close() is critical.
+        As long as a resultset is open it will keep the underlying database connection open.
