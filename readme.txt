@@ -402,3 +402,30 @@ Chapter 4 Setting up MySQL
 
         It is perfectly acceptable (and common) to ignore the sql.Result return value if you don’t need it. Like so:
             _, err := m.DB.Exec(stmt, title, content, expires)
+
+    Using the model in our handlers
+
+        Lets demonstrate how to call this new code from our handlers.
+        
+        docker exec -it snippet-db mysql -u root -p 
+            mysql> SHOW databases;
+                +--------------------+
+                | Database           |
+                +--------------------+
+                | snippetbox         |
+                +--------------------+
+                5 rows in set (0.00 sec)
+
+            mysql> USE snippetbox;
+                Database changed
+            
+            mysql> SELECT id, title, expires FROM snippets;
+                +----+------------------------+---------------------+
+                | id | title                  | expires             |
+                +----+------------------------+---------------------+
+                |  1 | An old silent pond     | 2025-05-06 01:42:48 |
+                |  2 | Over the wintry forest | 2025-05-06 01:42:48 |
+                |  3 | First autumn morning   | 2024-05-13 01:42:48 |
+                |  4 | O snail                | 2024-05-14 02:03:51 |
+                +----+------------------------+---------------------+
+                4 rows in set (0.00 sec)
