@@ -406,26 +406,28 @@ Chapter 4 Setting up MySQL
     Using the model in our handlers
 
         Lets demonstrate how to call this new code from our handlers.
-        
-        docker exec -it snippet-db mysql -u root -p 
-            mysql> SHOW databases;
-                +--------------------+
-                | Database           |
-                +--------------------+
-                | snippetbox         |
-                +--------------------+
-                5 rows in set (0.00 sec)
 
-            mysql> USE snippetbox;
-                Database changed
+            curl -v -d '{"any_key":"any_value"}' -H "Content-Type: application/json" -X POST http://localhost:4000/snippet/create
             
-            mysql> SELECT id, title, expires FROM snippets;
-                +----+------------------------+---------------------+
-                | id | title                  | expires             |
-                +----+------------------------+---------------------+
-                |  1 | An old silent pond     | 2025-05-06 01:42:48 |
-                |  2 | Over the wintry forest | 2025-05-06 01:42:48 |
-                |  3 | First autumn morning   | 2024-05-13 01:42:48 |
-                |  4 | O snail                | 2024-05-14 02:03:51 |
-                +----+------------------------+---------------------+
-                4 rows in set (0.00 sec)
+            docker exec -it snippet-db mysql -u root -p 
+                mysql> SHOW databases;
+                    +--------------------+
+                    | Database           |
+                    +--------------------+
+                    | snippetbox         |
+                    +--------------------+
+                    5 rows in set (0.00 sec)
+
+                mysql> USE snippetbox;
+                    Database changed
+                
+                mysql> SELECT id, title, expires FROM snippets;
+                    +----+------------------------+---------------------+
+                    | id | title                  | expires             |
+                    +----+------------------------+---------------------+
+                    |  1 | An old silent pond     | 2025-05-06 01:42:48 |
+                    |  2 | Over the wintry forest | 2025-05-06 01:42:48 |
+                    |  3 | First autumn morning   | 2024-05-13 01:42:48 |
+                    |  4 | O snail                | 2024-05-14 02:03:51 |
+                    +----+------------------------+---------------------+
+                    4 rows in set (0.00 sec)
