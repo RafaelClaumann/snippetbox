@@ -707,4 +707,27 @@ Chapter 5 Dynamic HTML templates
                   If it’s empty, we want to display a "There's nothing to see here yet! message.
                 
                 - Use the {{range}} action to iterate over all snippets in the slice, rendering the contents of each snippet in a table row.
+        
+        Additional information
 
+            Combining functions
+                The following tag will render the content C1 if the length of Foo is greater than 99.
+                    
+                    {{if (gt (len .Foo) 99)}} C1 {{end}}
+
+                The following tag will render the content C1 if .Foo equals 1 and .Bar is less than or equal to 20.
+
+                    {{if (and (eq .Foo 1) (le .Bar 20))}} C1 {{end}}
+                
+            Controlling loop behavior
+
+                Within a {{range}} action you can use the {{break}} command to end the loop early,
+                and {{continue}} to immediately start the next loop iteration.
+
+                    {{range .Foo}}
+                        // Skip this iteration if the .ID value equals 99.
+                        {{if eq .ID 99}}
+                            {{continue}}
+                        {{end}}
+                        // ...
+                    {{end}}
