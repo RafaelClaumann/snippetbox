@@ -650,3 +650,49 @@ Chapter 5 Dynamic HTML templates
                 https://pkg.go.dev/time#Time.AddDate
 
                     <span>{{.Snippet.Created.AddDate 0 6 0}}</span>
+        
+    5.2 Template actions and functions
+
+            We’re going to look at the template actions and functions that Go provides.
+            There are three more actions to control the display of dynamic data — {{if}}, {{with}} and {{range}}.
+
+            If .Foo is not empty then render the content C1, otherwise render the content C2.
+            https://developer.hashicorp.com/nomad/tutorials/templates/go-template-syntax#if
+
+                {{if .Foo}} C1 {{else}} C2 {{end}}
+
+            If .Foo is not empty, then set dot to the value of .Foo and render the content C1, otherwise render the content C2.
+            https://developer.hashicorp.com/nomad/tutorials/templates/go-template-syntax#with
+
+                {{with .Foo}} C1 {{else}} C2 {{end}}
+
+            If the length of .Foo is greater than zero then loop over each element, setting dot to the value of each element
+            and rendering the content C1. If the length of .Foo is zero then render the content C2.
+            The underlying type of .Foo must be an array, slice, map, or channel.
+            https://developer.hashicorp.com/nomad/tutorials/templates/go-template-syntax#range
+            
+                {{range .Foo}} C1 {{else}} C2 {{end}}
+            
+
+            - For all three actions the {{else}} clause is optional. For instance, you can write {{if .Foo}} C1 {{end}}
+            - It’s important to grasp that the with and range actions change the value of dot.
+
+            The html/template package also provides some template functions which you can use to add
+            extra logic to your templates and control what is rendered at runtime.
+            https://pkg.go.dev/text/template#hdr-Functions
+
+                {{eq .Foo .Bar}}                // Yields true if .Foo is equal to .Bar
+                {{ne .Foo .Bar}}                // Yields true if .Foo is not equal to .Bar
+                {{not .Foo}}                    // Yields the boolean negation of .Foo
+                {{or .Foo .Bar}}                // Yields .Foo if .Foo is not empty; otherwise yields .Bar
+                {{index .Foo i}}                // Yields the value of .Foo at index i.
+                {{printf "%s-%s" .Foo .Bar}}    // Yields a formatted string containing the .Foo and .Bar values. Works in the same way as fmt.Sprintf().
+                {{len .Foo}}                    // Yields the length of .Foo as an integer.
+                {{$bar := len .Foo}}            // Assign the length of .Foo to the template variable $bar
+
+
+        Using the with action
+            A good opportunity to use the {{with}} action is the view.tmpl file.
+
+            Now between {{with .Snippet}} and the corresponding {{end}} tag, the value of dot is set to .Snippet.
+            Dot essentially becomes the models.Snippet struct instead of the parent templateData struct.
