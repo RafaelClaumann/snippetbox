@@ -617,3 +617,14 @@ Chapter 5 Dynamic HTML templates
             exported field in your templates by postfixing dot with the field name(eg. {{.Title}}).
 
             Create a new file at ui/html/pages/view.tmpl.
+        
+        Rendering multiple pieces of data
+
+            Go’s html/template package allows you to pass in one — and only one — item of dynamic data when rendering a template.
+            But in a real-world application there are often multiple pieces of dynamic data that you want to display in the same page.
+            A lightweight and type-safe way to achieve this is to wrap your dynamic data in a struct which acts like a single ‘holding structure’ for your data.
+
+            Create a new cmd/web/templates.go file.
+            Update the snippetView handler to use this new struct when executing our templates.
+            Now, our snippet data is contained in a models.Snippet struct within a templateData struct.
+            To yield the data, we need to chain the appropriate field names together like so: {{.Snippet.ID}}, {{.Snippet.Title}}, etc.
