@@ -628,3 +628,25 @@ Chapter 5 Dynamic HTML templates
             Update the snippetView handler to use this new struct when executing our templates.
             Now, our snippet data is contained in a models.Snippet struct within a templateData struct.
             To yield the data, we need to chain the appropriate field names together like so: {{.Snippet.ID}}, {{.Snippet.Title}}, etc.
+        
+        Additional information
+
+            Dynamic content escaping
+                The html/template package automatically escapes any data that is yielded between {{ }} tags.
+                This behavior is hugely helpful in avoiding cross-site scripting (XSS) attacks, and is the reason
+                that you should use the html/template package instead of the more generic text/template package that Go also provides.
+            
+            Calling methods
+
+                If the type that you’re yielding between {{ }} tags has methods defined against it, you can call these methods.
+                
+                In Snippet.Created you can use the underlying type time.Time Weekday() method.
+                https://pkg.go.dev/time#Time.Unix
+
+                    <span>{{.Snippet.Created.Weekday}}</span>
+                
+                You could use the AddDate() method with parameters to add six months to a time.
+                The parameters are not surrounded by parentheses and are separated by a single space character.
+                https://pkg.go.dev/time#Time.AddDate
+
+                    <span>{{.Snippet.Created.AddDate 0 6 0}}</span>
