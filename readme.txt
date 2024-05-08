@@ -696,3 +696,15 @@ Chapter 5 Dynamic HTML templates
 
             Now between {{with .Snippet}} and the corresponding {{end}} tag, the value of dot is set to .Snippet.
             Dot essentially becomes the models.Snippet struct instead of the parent templateData struct.
+        
+        Using the if and range actions
+            Use the {{if}} and {{range}} actions in a concrete example and update our homepage to display a table of the latest snippet.
+            Update the templateData struct so that it contains a Snippets field for holding a slice of snippets.
+            Update the home handler function so that it fetches the latest snippets from our database model and passes them to the home.tmpl.
+            
+            Head over to the ui/html/pages/home.tmpl file and update it to display these snippets in a table using the {{if}} and {{range}} actions.
+                - Use the {{if}} action to check whether the slice of snippets is empty.
+                  If it’s empty, we want to display a "There's nothing to see here yet! message.
+                
+                - Use the {{range}} action to iterate over all snippets in the slice, rendering the contents of each snippet in a table row.
+
