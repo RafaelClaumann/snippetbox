@@ -600,3 +600,20 @@ Chapter 4 Setting up MySQL
             If that connection is closed or in use (i.e. not idle) the statement will be re-prepared on another connection.
 
             So, there is a trade-off to be made between performance and complexity.
+
+Chapter 5 Dynamic HTML templates
+
+    In this section of the book we’re going to concentrate on displaying the dynamic data from our MySQL database in some proper HTML pages.
+
+    5.1 Displaying dynamic data
+
+            Currently our snippetView hander function fetches a models.Snippet object from the
+            database and then dumps the contents out in a plain-text HTTP response.
+            Let’s start in the snippetView handler and add some code to render a new view.tmpl template file.
+
+            Within your HTML templates, any dynamic data that you pass in is represented by the . character.
+            In this specific case, the underlying type of dot will be a models.Snippet struct.
+            When the underlying type of dot is a struct, you can render (or yield) the value of any
+            exported field in your templates by postfixing dot with the field name(eg. {{.Title}}).
+
+            Create a new file at ui/html/pages/view.tmpl.
