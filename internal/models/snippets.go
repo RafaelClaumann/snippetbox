@@ -35,7 +35,9 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 	// title, content and expiry values for the placeholder parameters. This
 	// method returns a sql.Result type, which contains some basic
 	// information about what happened when the statement was executed.
+	// var result sql.Result; var err error; result, err = m.DB.Exec(stmt, title, content, expires)
 	result, err := m.DB.Exec(stmt, title, content, expires)
+
 	if err != nil {
 		return 0, err
 	}
@@ -63,17 +65,20 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 	// SQL statement, passing in the untrusted id variable as the value for the
 	// placeholder parameter. This returns a pointer to a sql.Row object which
 	// holds the result from the database.
-	row := m.DB.QueryRow(stmt, id)
+	// row := m.DB.QueryRow(stmt, id)
+	var row *sql.Row = m.DB.QueryRow(stmt, id)
 
 	// Initialize a pointer to a new zeroed Snippet struct.
-	s := &Snippet{}
+	// s := &Snippet{}
+	var s *Snippet = &Snippet{}
 
 	// Use row.Scan() to copy the values from each field in sql.Row to the
 	// corresponding field in the Snippet struct. Notice that the arguments
 	// to row.Scan are *pointers* to the place you want to copy the data into,
 	// and the number of arguments must be exactly the same as the number of
 	// columns returned by your statement.
-	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	// err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	var err error = row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	if err != nil {
 		// If the query returns no rows, then row.Scan() will return a
 		// sql.ErrNoRows error. We use the errors.Is() function check for that
@@ -112,7 +117,8 @@ func (m *SnippetModel) Latest() ([]*Snippet, error) {
 	defer rows.Close()
 
 	// Initialize an empty slice to hold the Snippet structs.
-	snippets := []*Snippet{}
+	// snippets := []*Snippet{}
+	var snippets []*Snippet = []*Snippet{}
 
 	// Use rows.Next to iterate through the rows in the resultset. This
 	// prepares the first (and then each subsequent) row to be acted on by the
@@ -121,7 +127,9 @@ func (m *SnippetModel) Latest() ([]*Snippet, error) {
 	// database connection.
 	for rows.Next() {
 		// Create a pointer to a new zeroed Snippet struct.
-		s := &Snippet{}
+		// s := &Snippet{}
+		var s *Snippet = &Snippet{}
+
 		// Use rows.Scan() to copy the values from each field in the row to the
 		// new Snippet object that we created. Again, the arguments to row.Scan()
 		// must be pointers to the place you want to copy the data into, and the
