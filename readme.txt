@@ -513,3 +513,90 @@ Chapter 4 Setting up MySQL
         Using the model in our handlers
 
             Update the home handler to use the SnippetModel.Latest() method.
+    
+    4.9 Transactions and other details
+
+            The database/sql package essentially provides a standard interface between your Go application and the world of SQL databases.
+            The Go code you write will generally be portable and will work with any kind of SQL database.
+            Your application isn’t so tightly coupled to the database that you’re currently using.
+            You can swap databases in the future without re-writing all of your code.
+
+        Verbosity
+
+            If the verbosity really is starting to grate on you, you might want to consider
+            trying the jmoiron/sqlx package. It’s well designed and provides some good
+            extensions that make working with SQL queries quicker and easier.
+            https://github.com/jmoiron/sqlx
+            
+            Another, newer, option you may want to consider is the blockloop/scan package.
+            https://github.com/blockloop/scan
+        
+        Working with transactions
+
+            Calls to Exec(), Query() and QueryRow() can use any connection from the sql.DB pool.
+            There is no guarantee that two calls to Exec() immediately next to each other will use the same database connection.
+
+            Example, if you lock a table with MySQL’s LOCK TABLES command you must call
+            UNLOCK TABLES on exactly the same connection to avoid a deadlock.
+
+            To guarantee that the same connection is used you can wrap multiple statements in a transaction:
+
+                func (m *ExampleModel) ExampleTransaction() error {
+                    // Calling the Begin() method on the connection pool creates a new sql.Tx
+                    // object, which represents the in-progress database transaction.
+                    tx, err := m.DB.Begin()
+                    if err != nil {
+                        return err
+                    }
+
+                    // Defer a call to tx.Rollback() to ensure it is always called before the 
+                    // function returns. If the transaction succeeds it will be already be 
+                    // committed by the time tx.Rollback() is called, making tx.Rollback() a 
+                    // no-op. Otherwise, in the event of an error, tx.Rollback() will rollback 
+                    // the changes before the function returns.
+                    defer tx.Rollback()
+
+                    // Call Exec() on the transaction, passing in your statement and any
+                    // parameters. It's important to notice that tx.Exec() is called on the
+                    // transaction object just created, NOT the connection pool. Although we're
+                    // using tx.Exec() here you can also use tx.Query() and tx.QueryRow() in
+                    // exactly the same way.
+                    _, err = tx.Exec("INSERT INTO ...")
+                    if err != nil {
+                        return err
+                    }
+
+                    // Carry out another transaction in exactly the same way.
+                    _, err = tx.Exec("UPDATE ...")
+                    if err != nil {
+                        return err
+                    }
+
+                    // If there are no errors, the statements in the transaction can be committed
+                    // to the database with the tx.Commit() method. 
+                    err = tx.Commit()
+                    return err
+                }
+            
+            Transactions are also super-useful if you want to execute multiple SQL statements as a single atomic action.
+            So long as you use the tx.Rollback() method in the event of any errors, the transaction ensures that either:
+                - All statements are executed successfully; or
+                - No statements are executed and the database remains unchanged.
+
+            https://go.dev/doc/database/execute-transactions
+        
+        Prepared statements
+            The Exec(), Query() and QueryRow() methods all use prepared statements behind the scenes to help prevent SQL injection attacks.
+            They set up a prepared statement on the database connection, run it with the parameters provided, and then close the prepared statement.
+            This might feel rather inefficient because we are creating and recreating the same prepared statements every single time.
+            A better approach could be to make use of the DB.Prepare() method to create our own prepared statement once, and reuse that instead.
+            This is particularly true for complex SQL statements and are repeated very often.
+
+            https://pkg.go.dev/database/sql/#DB.Prepare
+
+            Prepared statements exist on database connections.
+            The sql.Stmt object then remembers which connection in the pool was used.
+            The next time, the sql.Stmt object will attempt to use the same database connection again.
+            If that connection is closed or in use (i.e. not idle) the statement will be re-prepared on another connection.
+
+            So, there is a trade-off to be made between performance and complexity.
