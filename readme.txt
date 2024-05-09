@@ -750,3 +750,14 @@ Chapter 5 Dynamic HTML templates
 
             Lets make newTemplateCache() more flexible to automatically parse all template files from iu/html/partials folder.
             This will save, typing and potential bugs if new partials are added in future.
+
+    5.4 Catching runtime errors
+
+            Adicionamos comportamento dinamico aos templates e isso pode gerar erros de runtime.
+            É possível forçar um 'runtime error' adicionado {{len nil}} em view.tmpl, já que 'nil' não tem 'length'.
+            A aplicação lançará um erro, mas o usuário receberá HTTP Status 200 como resposta e metade do HTML renderizado.
+
+            Para resolver isso vamos renderizar o template em dois estágios.
+            Vamos escrever o template em um buffer.
+                1 - Se falhar, respondemos com uma mensagem de erro
+                2 - Se funcionar, escrevemos o conteúdo do buffer no http.ResponseWriter.
