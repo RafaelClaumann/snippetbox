@@ -745,3 +745,8 @@ Chapter 5 Dynamic HTML templates
             Initialize this cache in the main() function and make it available to our handlers as a dependency via the application struct.
 
             Create a helper method so that we can easily render the templates from the cache on cmd/web/helpers.go.            
+        
+        Automatically parsing partials
+
+            Lets make newTemplateCache() more flexible to automatically parse all template files from iu/html/partials folder.
+            This will save, typing and potential bugs if new partials are added in future.
