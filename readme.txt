@@ -772,3 +772,9 @@ Chapter 5 Dynamic HTML templates
             Criar um método auxiliar newTemplateData() em helmpers.go para criar um templateData com o campo year preenchido.
             Alterar os handlers para que usem newTemplateData() ao invés de criar templateData na chamado do render().
             Alterat o footer de base.tmpl para que exiba o campo CurrentYear de templateData.
+    
+    5.6 Custom template functions
+
+            Como criar suas próprias funções customizadas para serem utilizadas nos templates?
+            Vamos criar a função humanDate() para retornar datetime de forma human friendly.
+            O template agora é criado usando .New() e a função é fornecida em .Funcs().
