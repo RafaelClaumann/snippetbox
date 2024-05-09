@@ -761,3 +761,14 @@ Chapter 5 Dynamic HTML templates
             Vamos escrever o template em um buffer.
                 1 - Se falhar, respondemos com uma mensagem de erro
                 2 - Se funcionar, escrevemos o conteúdo do buffer no http.ResponseWriter.
+    
+    5.5 Common dynamic data
+
+            Vamos incluir dados dinâmicos que serão compartilhados entre as diferentes páginas da aplicação.
+            Exemplo, a foto do perfil e o usuário atual em uma rede social.
+            O dado dinâmico que vamos incluir é o ano atual no rodapé das páginas.
+
+            Adicionar o campo CurrentYear a struct templateData em templates.go.
+            Criar um método auxiliar newTemplateData() em helmpers.go para criar um templateData com o campo year preenchido.
+            Alterar os handlers para que usem newTemplateData() ao invés de criar templateData na chamado do render().
+            Alterat o footer de base.tmpl para que exiba o campo CurrentYear de templateData.
