@@ -731,3 +731,17 @@ Chapter 5 Dynamic HTML templates
                         {{end}}
                         // ...
                     {{end}}
+
+    5.3 Caching templates
+
+            There are two main issues at the moment:
+                - Everytime our application render a web page the template was read and parsed using template.ParseFiles() function.
+                  We could avoid this parsing files once, when application starts.
+                
+                - Duplicated code in the home and snippetView handlers.
+            
+            Create an in-memory map with the type map[string]*template.Template to cache the parsed templates in cmd/web/templates.go.
+
+            Initialize this cache in the main() function and make it available to our handlers as a dependency via the application struct.
+
+            Create a helper method so that we can easily render the templates from the cache on cmd/web/helpers.go.            
