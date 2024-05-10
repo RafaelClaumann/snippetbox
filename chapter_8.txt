@@ -16,3 +16,36 @@ Chapter 8 Processing forms
 
         Atualizar o handler snippetCreateForm para que renderize a nova pagina(create.tmpl).
 
+
+    8.2 Parsing form data
+
+        Atualizar o handler snippetCreatePost responsável por POST /snippets/create para que ele processe as informações do formulário.
+            
+            1.  Usar o método r.ParseForm() para analisar o Request Body.
+                Este método verifica que o Request Body está 'well-formed' e armazena as informanções em r.PostForm e r.Form.
+                Se houver um algum problema no processamento r.ParseForm() retornará um erro.
+                O r.ParseForm() é idempotente, pode ser invocado múltiplas vezes na mesma requisição sem gerar efeitos colaterais.
+            
+            2.  Obter os dados do formulário r.PostForm().Get().
+                Por exemplo, obtendo o titulo do snippet r.PostForm().Get('title').
+                Se a chave 'tittle' não existisse o método Get() retornária uma string vazia.
+
+        Additional information
+
+            The r.Form map
+                
+                Também é possível acesas os dados do formulário usando r.Form().
+                O r.PostForm só é preenchido por requests do tipo POST, PUT e PATCH.
+                O r.Form é populado em todo tipo de requisição, ele armazena os dados do formulário, request body e query string parameters.
+                Ao acessar /snippet/create?foo=bar será possível obter o valor de foo usando r.Form().Get('foo')
+
+            The FormValue and PostFormValue methods
+
+                O pacote net/http também fornece os métodos r.FormValue() e r.PostFormValue().
+                Eles são atalhos para r.ParseForm() e recuperam o valor dos campos de r.Form ou r.PostForm.
+            
+            Multiple-value fields
+
+                O r.PostForm.Get() retorna especificamente o primeiro valor de um campo especifico.
+                Isso signfica que não é possível usa-lo em formulários que enviam multiplos valores para o mesmo campo(check boxes).
+                Neste caso será preciso usar o r.PostForm() diretamente.
