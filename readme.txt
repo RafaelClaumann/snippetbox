@@ -1058,3 +1058,19 @@ Chapter 7 Advanced routing
             Os patterns podem incluir wildcards, eles devem ser usados no final do patten, por exemplo, '/static/*filepath'.
 
             O pattern '/' dará match apenas se a URL for exatamente '/'.
+        
+        Custom error handlers
+
+
+            Duas requisições recebendo o mesmo HTTP Status, mas com resposta diferente, estranho.
+                $ curl http://localhost:4000/snippet/view/99
+                Not Found
+
+                $ curl http://localhost:4000/missing
+                404 page not found
+            
+            Isso acontece porque '/snippet/view/99' acaba chamando app.NotFound() enquanto '/missing' recebe
+            uma resposta automatica do httprouter.
+            
+            Felizmente httprouter permite definir um handler especifico para erros 404.
+            Isso é feito atraveś do campo NotFound da struct Router.
