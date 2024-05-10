@@ -778,3 +778,91 @@ Chapter 5 Dynamic HTML templates
             Como criar suas próprias funções customizadas para serem utilizadas nos templates?
             Vamos criar a função humanDate() para retornar datetime de forma human friendly.
             O template agora é criado usando .New() e a função é fornecida em .Funcs().
+    
+Chapter 6 Middleware
+
+    No desenvolvimento de aplicações web pode ser preciso que uma funcionalidade seja
+    executada para muitas ou até todas as requisições HTTP.
+    Essa funcionalidade pode ser: logger, adicionar header, remover header, verificar header, etc...
+
+    Uma maneira comum de resolver isso é através de Middlewares.
+    O Middleware pode entrar em ação antes ou depois de um handler.
+
+    6.1 How middleware works
+
+            Atualmente, quando nosso servidor recebe uma requisição ele invoca o método ServeHTTP() do servermux.
+            Este método procura o handler que dê match com a URI, e invoca o método ServeHTTP() do handler encotrado.
+            
+            A ideia de Middleware é inserir um novo "handler" na cadeia de handlers existente.
+            Assim que o Middleware termina seu processamento ele invoca o ServeHTTP() do próximo handler na cadeia.
+
+            Na verdade já usamos alguma coisa de middleware.
+            A função http.StripPrefix() usada no arquivo routes.go é um middleware.
+        
+        The pattern
+
+            Este é o código padrão para criação de um Middlewares:
+
+                func myMiddleware(next http.Handler) http.Handler {
+                    fn := func(w http.ResponseWriter, r *http.Request) {
+                        // TODO: Execute our middleware logic here...
+                        next.ServeHTTP(w, r)
+                    }
+                    return http.HandlerFunc(fn)
+                }
+
+            https://www.kelche.co/blog/go/closure/
+            https://www.programiz.com/golang/closure
+            https://code101.medium.com/understanding-closures-in-go-encapsulating-state-and-behaviour-558ac3617671
+        
+        Simplifying the middleware
+
+            func myMiddleware(next http.Handler) http.Handler {
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                    // TODO: Execute our middleware logic here...
+                    next.ServeHTTP(w, r)
+                })
+            }
+        
+        Positioning the middleware
+
+            É importante saber que dependendo da posição que o Middleware estiver afetará o comportamento do programa.
+            
+            Posicionar um Middleware antes do servermux fará com que ele seja executado para todas as requisições.
+            Um caso de uso para este Middleware seria logar as requisições.
+
+            Para posicionar o Middleware após o servermux basta realizar um "wrap" em um handler específico.
+            Um caso de uso para isto pode ser autorização e autenticação.
+    
+    6.2 Setting security headers
+
+        Vamos criar um Middleware para adicionar uma série de headers de segurança.
+            https://owasp.org/www-project-secure-headers
+        
+        - Content-Security-Policy:
+            Used to restrict where the resources for your web page can be loaded from.
+            Setting a strict CSP policy helps prevent a variety of cross-site scripting, clickjacking, and other code-injection attacks.
+
+            In our case, the header tells the browser that it’s OK to load fonts from fonts.gstatic.com, stylesheets from fonts.googleapis.com
+            and self (our own origin), and then everything else only from self. Inline JavaScript is blocked by default.
+        
+        - Referrer-Policy
+            Used to control what information is included in a Referer header when a user navigates away from your web page.
+        
+        - X-Content-Type-Options: nosniff
+            Instructs browsers to not MIME-type sniff the content-type of the response, which in turn helps to prevent content-sniffing attacks.
+        
+        - X-Frame-Options: deny
+            Used to help prevent clickjacking attacks in older browsers that don’t support CSP headers.
+        
+        - X-XSS-Protection: 0
+            Used to disable the blocking of cross-site scripting attacks.
+            Previously it was good practice to set this header to X-XSS-Protection: 1; mode=block,
+            but when you’re using CSP headers like we are the recommendation is to disable this feature altogether.
+
+        Criar um novo arquivo chamado middleware.go.
+        Este Middleware deve ser executado antes do servermux.
+            
+            secureHeaders -> servemux -> application handler
+        
+        Para que isso funcione a função secureHeaders precisa envelopar(wrap) o servermux de routes.go.
