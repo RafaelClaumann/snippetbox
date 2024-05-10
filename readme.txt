@@ -976,7 +976,85 @@ Chapter 6 Middleware
             standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
             return standard.Then(mux)
 
+Chapter 7 Advanced routing
 
+    Um formulário html será adicionado a aplicação na rota /snipet/create para permitir que os usuário criem snippets.
+    Será preciso atualizar as rotas da aplicação para que /snippet/create seja tratado de acordo com o método HTTP.
 
+        - GET /snippet/create -> exibir o form HTML para que o usuário adicione um novo snippet.
+        - POST /snippet/create -> processa os dados do formulário e insere o novo snippet no banco de dados.
+    
+    Além disso, serão feitas outras melhorias no roteamento:
 
+        - Restringir as rotas que só retornam informações a aceitarem apenas HTTP GET.
+        - Usar o Clean URL, isto é, as Query Strings serão convertidas em URL Params.
 
+            /snippet/view?id=123 -> /snippet/view/12
+            https://en.wikipedia.org/wiki/Clean_URL
+
+        Method      Pattern             Handler             Action
+        GET         /                   home                Display the home page
+        GET         /snippet/view/:id   snippetView         Display a specific snippet
+        GET         /snippet/create     snippetCreate       Display a HTML form for creating a new snippet
+        POST        /snippet/create     snippetCreatePost   Create a new snippet
+        GET         /static/            http.FileServer     Serve a specific static file
+
+    O Go ServerMux não é capaz de lidar com rotemento baseado em métodos HTTP e Clean URLs com variáveis.
+    Existem algumas "tricks" para contornar a situação, mas é mais fácil usar um pacote de terceiros  que seja capaz realizar o roteamento.
+
+    7.1 Choosing a router
+
+            Existem centenas de routers para Go. Cada um deles trabalha de forma diferente, possui sua própria API, usa sua própria
+            lógica para realizar match em rotas e tem suas peculiaridades comportamentais.
+
+            Os três routers mais recomendados:
+                - julienschmidt/httprouter (https://github.com/julienschmidt/httprouter)
+                - go-chi/chi (https://github.com/go-chi/chi)
+                - gorilla/mux (https://github.com/gorilla/mux)
+            
+            Todos os três tem capacidade de rotear baseado no método HTTP e lidar com Clen URL.
+            
+            julienschmidt/httprouter
+                Is the most focused, lightweight and fastest of the three packages, and is about as close to ‘perfect’
+                as any third-party router gets in terms of its compliance with the HTTP specs.
+
+                It automatically handles OPTIONS requests and sends 405 responses correctly, and allows you to set custom
+                handlers for 404 and 405 responses too.
+            
+            go-chi/chi
+                Is generally similar to httprouter in terms of its features, with the main differences being that
+                it also supports regexp route patterns and ‘grouping’ of routes which use specific middleware.
+                This route grouping feature is really valuable in larger applications where you have lots routes and middleware to manage.
+                
+                Two downsides of chi are that it doesn’t automatically handle OPTIONS requests, and it doesn’t set
+                an Allow header in 405 responses.
+            
+            gorilla/mux
+                The most full-featured of the three routers.
+                It supports regexp route patterns, and allows you to route requests based on scheme, host and headers.
+                It’s also the only one to support custom routing rules and route ‘reversing'.
+                It also doesn’t automatically handle OPTIONS requests, and it doesn’t set an Allow header in 405 responses
+
+            https://www.alexedwards.net/blog/which-go-router-should-i-use
+
+    7.2 Clean URLs and method-based routing
+
+            Instalar julienschmidt/httprouter.
+                go get github.com/julienschmidt/httprouter@v1
+            
+            Exemplo:
+                router := httprouter.New()
+                router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+            
+                - Adicionando rota ao router com HandlerFunc() para exibir um snippet com o handler snippetView.
+                - O primeiro argumento é o método HTTP que a requisição precisa enviar para considerar um match com a rota.
+                - O segundo argumento é o pattern para dar match.
+            
+            Os patterns podem incluir parametros nomeadas(named parameters).
+            Por exemplo, um pattern do tipo '/snippet/view/:id':
+                vai dar match   -> /snippet/view/123    /snippet/view/foo
+                não dará match  -> /snippet/Bar         /snippet/view/foo/baz
+            
+            Os patterns podem incluir wildcards, eles devem ser usados no final do patten, por exemplo, '/static/*filepath'.
+
+            O pattern '/' dará match apenas se a URL for exatamente '/'.
