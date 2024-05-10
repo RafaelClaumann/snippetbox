@@ -921,3 +921,32 @@ Chapter 6 Middleware
             servermux
               3. \/  4. /\
             application handler
+    
+    6.4 Panic recovery
+
+        Aplicações go simples são finalizadas de maneira direta quando panic() é chamado.
+            https://pkg.go.dev/builtin#panic
+        
+        O servidor HTTP do go assume que qualquer panic estará associado a goroutine responsável
+        pela requisição HTTP(lembre-se: cada requisição é 'handled' na sua própria goroutine).
+
+        No cenário atual o servidor fai fazer o log do stacktrace e interromper a requisição(goroutine)
+        que gerou o panic.
+
+            panic("oops! something went wrong") // Deliberate panic
+
+        Outro detalhe é que, quando ocorrer um panic, essa será a resposta enviada ao cliente:
+
+            curl -i http://localhost:4000
+            curl: (52) Empty reply from server
+        
+        Criar um middleware para recuperar do panic e chamar helpers.serverError() de forma a retornar informações claras ao cliente.
+        Podemos aproveitar que funções "deferred" são executadas nequanto o stacktrace está sendo "unwound" após um panic para
+        criar o middleware.
+
+        Definir Connection: Close na resposta funciona como um gatilho para o go encerrar a goroutine da requisição depois que a resposta
+        for enviada ao cliente.
+
+        Se o protocolo for HTTP/2 o go remove Connection: Close da resposta e envia o frame GOAWAY.
+
+        A função fmt.Errorf() foi usada para retornar o parametro passado em panic().
