@@ -907,3 +907,17 @@ Chapter 6 Middleware
                         next.ServeHTTP(w, r)
                     })
                 }
+    
+    6.3 Request logging
+
+        Adicionar um middleware de log para identificar o endereço IP, URL e método solicitado.
+        Esse middleware será o primeiro a ser executado, logo deve ser posicionado a frente de secureHeaders() e servermux.
+        O middleware foi implementado "contra" a struct application para que consiga acessar o app.infoLog.Printf().
+
+            logRequest
+              1. \/  6. /\
+            secureHeaders
+              2. \/  5. /\
+            servermux
+              3. \/  4. /\
+            application handler
