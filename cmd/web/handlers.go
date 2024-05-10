@@ -78,6 +78,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
+	// Initialize a new createSnippetForm instance and pass it to the template.
+	// Notice how this is also a great opportunity to set any default or
+	// 'initial' values for the form --- here we set the initial value for the
+	// snippet expiry to 365 days.
+	data.Form = snippetCreateForm{Expires: 365}
+
 	app.render(w, http.StatusOK, "create.tmpl", data)
 }
 
@@ -133,7 +139,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// field. Note that we use the HTTP status code 422 Unprocessable Entity
 	// when sending the response to indicate that there was a validation error.
 	if len(form.FieldErrors) > 0 {
-		app.infoLog.Println(form)
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)

@@ -72,3 +72,36 @@ Chapter 8 Processing forms
         
         Definir uma nova struct chamada snippetCreateForm em cmd/web/handlers.go para segurar os dados do formulário e os erros de validação.
         Após a validação, se houver algum erro, invocar app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data).
+        O argumento data é a struct snippetCreateForm que contém os dados do formulário invalido.
+
+        Updating the HTML template
+            
+            É preciso atualizar create.tmpl para que destaque os campos invalidados e re-exiba os dados previamente inseridos pelo usuário.
+
+                type snippetCreateForm struct {
+                    Title       string
+                    Content     string
+                    Expires     int
+                    FieldErrors map[string]string
+                }
+
+                type templateData struct {
+                    CurrentYear int
+                    Snippet     *models.Snippet
+                    Snippets    []*models.Snippet
+                    Form        any
+                }
+
+            Na chamada app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+            usada para renderizar 'create.tmpl' após um erro de validação o struct data é um
+            templateData cujo campo Form é o snippetCreateForm.
+
+            Por isso é possível fazer .Form.Tittle e .Form.FieldErrors.
+
+            Para re-exibir os dados é preciso acessar o Form usando {{.Form.Title}} e {{.Form.Content}}.
+
+            Para exibir a mensagem de erro na validação do 'title' basta fazer {{.Form.FieldErrors.title}}
+            Isso acessará o map FieldErrors map[string]string.
+
+            É preciso criar um novo snippetCreateForm em handlers.snippetCreate(), caso contrário ao acessar
+            '/snippet/create' ocorrerá um erro dizendo que o campo Form de templateData é null.
