@@ -49,3 +49,15 @@ Chapter 8 Processing forms
                 O r.PostForm.Get() retorna especificamente o primeiro valor de um campo especifico.
                 Isso signfica que não é possível usa-lo em formulários que enviam multiplos valores para o mesmo campo(check boxes).
                 Neste caso será preciso usar o r.PostForm() diretamente.
+
+    8.3 Validating form data
+
+        - verificar se o 'title' e 'content' não estão vazios
+        - garantir que o 'title' não tem mais do que 100 caracteres
+        - verificar que 'expires' corresponde aos valores permitidos
+
+        Atualizar o handler snippetCreatePost.
+
+
+        len() conta a quantidade de bytes, ou seja, "Zoë" possui 4 bytes.
+        utf8.RuneCountInString() conta a quantidade de caracteres, ou seja, "Zoë" tem 3 caracteres.
