@@ -836,33 +836,74 @@ Chapter 6 Middleware
     
     6.2 Setting security headers
 
-        Vamos criar um Middleware para adicionar uma série de headers de segurança.
-            https://owasp.org/www-project-secure-headers
-        
-        - Content-Security-Policy:
-            Used to restrict where the resources for your web page can be loaded from.
-            Setting a strict CSP policy helps prevent a variety of cross-site scripting, clickjacking, and other code-injection attacks.
-
-            In our case, the header tells the browser that it’s OK to load fonts from fonts.gstatic.com, stylesheets from fonts.googleapis.com
-            and self (our own origin), and then everything else only from self. Inline JavaScript is blocked by default.
-        
-        - Referrer-Policy
-            Used to control what information is included in a Referer header when a user navigates away from your web page.
-        
-        - X-Content-Type-Options: nosniff
-            Instructs browsers to not MIME-type sniff the content-type of the response, which in turn helps to prevent content-sniffing attacks.
-        
-        - X-Frame-Options: deny
-            Used to help prevent clickjacking attacks in older browsers that don’t support CSP headers.
-        
-        - X-XSS-Protection: 0
-            Used to disable the blocking of cross-site scripting attacks.
-            Previously it was good practice to set this header to X-XSS-Protection: 1; mode=block,
-            but when you’re using CSP headers like we are the recommendation is to disable this feature altogether.
-
-        Criar um novo arquivo chamado middleware.go.
-        Este Middleware deve ser executado antes do servermux.
+            Vamos criar um Middleware para adicionar uma série de headers de segurança.
+                https://owasp.org/www-project-secure-headers
             
-            secureHeaders -> servemux -> application handler
-        
-        Para que isso funcione a função secureHeaders precisa envelopar(wrap) o servermux de routes.go.
+            - Content-Security-Policy:
+                Used to restrict where the resources for your web page can be loaded from.
+                Setting a strict CSP policy helps prevent a variety of cross-site scripting, clickjacking, and other code-injection attacks.
+
+                In our case, the header tells the browser that it’s OK to load fonts from fonts.gstatic.com, stylesheets from fonts.googleapis.com
+                and self (our own origin), and then everything else only from self. Inline JavaScript is blocked by default.
+            
+            - Referrer-Policy
+                Used to control what information is included in a Referer header when a user navigates away from your web page.
+            
+            - X-Content-Type-Options: nosniff
+                Instructs browsers to not MIME-type sniff the content-type of the response, which in turn helps to prevent content-sniffing attacks.
+            
+            - X-Frame-Options: deny
+                Used to help prevent clickjacking attacks in older browsers that don’t support CSP headers.
+            
+            - X-XSS-Protection: 0
+                Used to disable the blocking of cross-site scripting attacks.
+                Previously it was good practice to set this header to X-XSS-Protection: 1; mode=block,
+                but when you’re using CSP headers like we are the recommendation is to disable this feature altogether.
+
+            Criar um novo arquivo chamado middleware.go.
+            Este Middleware deve ser executado antes do servermux.
+                
+                secureHeaders -> servemux -> application handler
+            
+            Para que isso funcione a função secureHeaders precisa envelopar(wrap) o servermux de routes.go.
+
+        Flow of control
+
+            Quando o último handler da cadeia retornar, o controle é passado de voltar no sentido oposto.
+
+                secureHeaders
+                  1. \/  4. /\
+                servermux
+                  2. \/  3. /\
+                application handler
+            
+            Todo código que vem antes da chamada next.ServeHTTP() é executado na "ida"
+            e o código após next.ServeHTTP() é executado na volta.
+
+                func myMiddleware(next http.Handler) http.Handler {
+                    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                        // Any code here will execute on the way down the chain.
+                        next.ServeHTTP(w, r)
+                        // Any code here will execute on the way back up the chain.
+                    })
+                }
+
+        Early returns
+
+            Realizar um 'return' antes de next.ServeHTTP() faz com que a cadeia pare de ser executada
+            e o fluxo volte no sentido oposto.
+            Um caso de uso é a autenticação e autorização,
+
+                func myMiddleware(next http.Handler) http.Handler {
+                    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                        // If the user isn't authorized send a 403 Forbidden status and
+                        // return to stop executing the chain.
+                        if !isAuthorized(r) {
+                            w.WriteHeader(http.StatusForbidden)
+                            return
+                        }
+
+                        // Otherwise, call the next handler in the chain.
+                        next.ServeHTTP(w, r)
+                    })
+                }
