@@ -61,3 +61,14 @@ Chapter 8 Processing forms
 
         len() conta a quantidade de bytes, ou seja, "Zoë" possui 4 bytes.
         utf8.RuneCountInString() conta a quantidade de caracteres, ou seja, "Zoë" tem 3 caracteres.
+    
+    8.4 Displaying errors and repopulating fields
+
+        Agora que snippetCreatePost valida os dados, o próximo passo é lidar com os erros de forma amigavel.
+        Se houver um erro de validação o form deve ser reexibido mantendo os dados inseridos previamente e destacando os campos com problemas.
+
+        Adicionar um campo Form do tipo any a struct templateData.
+        Este campo será usado para passar os erros de validação e dados previamente preenchidos de volta para o template quando o form for reexibido.
+        
+        Definir uma nova struct chamada snippetCreateForm em cmd/web/handlers.go para segurar os dados do formulário e os erros de validação.
+        Após a validação, se houver algum erro, invocar app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data).
