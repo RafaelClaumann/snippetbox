@@ -105,3 +105,15 @@ Chapter 8 Processing forms
 
             É preciso criar um novo snippetCreateForm em handlers.snippetCreate(), caso contrário ao acessar
             '/snippet/create' ocorrerá um erro dizendo que o campo Form de templateData é null.
+    
+    8.5 Creating validation helpers
+
+        Se a aplicação possuir muitos formulários ficará dificil lidar com a validação se ela estiver implementada como visto nas
+        seções anteriores.
+
+        Criar o arquivo internal/validator/validator.go para validação customizada, abstração e simplificação de código.
+
+        Using the helpers
+
+            Embutir uma instancia de Validator na struct handlers.snippetCreateForm.
+            https://eli.thegreenplace.net/2020/embedding-in-go-part-1-structs-in-structs/
