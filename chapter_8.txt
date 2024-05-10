@@ -1,0 +1,18 @@
+Chapter 8 Processing forms
+
+    Permitir que usuários criem Snippets usando form HTML.
+    Seguindo o padrão POST-REDIRECT-GET:
+        - Usuário recebe o form em branco em GET /snippet/create
+        - Usuário preenche o form e submete POST /snippet/create
+        - Os dados do form sao validados. Se houver erro de validação o campo será destacado(highlight).
+          Com o sucesso na validação o Snippet será adicionado ao banco de dados e o usuário redirecionado para /snippet/view/:id.
+    
+    Chapter 8.1 Setting up a HTML form
+
+        Criar um arquivo ui/html/pages/create.tmpl.
+        O detalhe mais importante deste arquivo são os atributos action e method do form que submetem o form com um POST em /snippet/create.
+
+        Adicionar um link 'Create snippet' no nav(/ui/html/partials/nav.tmpl).
+
+        Atualizar o handler snippetCreateForm para que renderize a nova pagina(create.tmpl).
+
