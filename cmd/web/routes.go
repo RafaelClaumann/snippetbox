@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/justinas/alice"
+)
 
 // Update the signature for the routes() method so that it returns a
 // http.Handler instead of *http.ServeMux.
@@ -15,6 +19,10 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 	mux.HandleFunc("/download", app.downloadHandler)
 
-	// Wrap the existing chain with the recoverPanic middleware.
-	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	// Create a middleware chain containing our 'standard' middleware
+	// which will be used for every request our application receives.
+	var standard alice.Chain = alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+
+	// Return the 'standard' middleware chain followed by the servemux.
+	return standard.Then(mux)
 }

@@ -950,3 +950,33 @@ Chapter 6 Middleware
         Se o protocolo for HTTP/2 o go remove Connection: Close da resposta e envia o frame GOAWAY.
 
         A função fmt.Errorf() foi usada para retornar o parametro passado em panic().
+    
+    6.5 Composable middleware chains
+
+        O pacote justinas/alice(https://github.com/justinas/alice) é usado para facilitar o gerenciamento de cadeias middlewares/handlers.
+        Ele é recomendado porque facilita a criação cadeias de middlewares combinaveis e reutilizaveis.
+        E fornece uma boa ajuda a medida que a aplicação cresce e as rotas se tornam complexas.
+
+        Sem justinas/alice:
+            return myMiddleware1(myMiddleware2(myMiddleware3(myHandler)))
+        
+        Com justinas/alice:
+            return alice.New(myMiddleware1, myMiddleware2, myMiddleware3).Then(myHandler)
+        
+        Mas o real poder deste pacote é permitir cadeias de middlewares sejam atribuidos a variáveis, anexados(apended) e reutilizados.
+        Exemplo:
+            myChain := alice.New(myMiddlewareOne, myMiddlewareTwo)
+            myOtherChain := myChain.Append(myMiddleware3)
+            return myOtherChain.Then(myHandler)
+
+        Para instalar a dependencia alice/justinas execute o comando:
+            go get github.com/justinas/alice@v1
+        
+        Atualize o arquivo routes.go:
+            standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+            return standard.Then(mux)
+
+
+
+
+
