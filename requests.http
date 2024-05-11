@@ -2,7 +2,7 @@ GET http://localhost:4000/ HTTP/1.1
 
 ###
 
-GET http://localhost:4000/snippet/view?id=1 HTTP/1.1
+GET http://localhost:4000/snippet/view/31 HTTP/1.1
 
 ###
 
