@@ -7,19 +7,23 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.claumann.net/internal/models"
 )
 
-// Add a formDecoder field to hold a pointer to a form.Decoder instance.
+// Add a new sessionManager field to the application struct.
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	snippets      *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -31,9 +35,6 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// To keep the main() function tidy I've put the code for creating a connection
-	// pool into the separate openDB() function below. We pass openDB() the DSN
-	// from the command-line flag.
 	db, err := openDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -43,23 +44,29 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
-	// Initialize a new template cache...
-	// var templateCache map[string]*template.Template; var err error; templateCache, err = newTemplateCache()
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	// Initialize a decoder instance...
 	formDecoder := form.NewDecoder()
 
-	// And add 'templateCache' to the application dependencies.
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	var sessionManager *scs.SessionManager = scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
+	// And add the session manager to our application dependencies.
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	srv := &http.Server{
@@ -69,9 +76,6 @@ func main() {
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
-	// Because the err variable is now already declared in the code above, we need
-	// to use the assignment operator = here, instead of the := 'declare and assign'
-	// operator.
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }

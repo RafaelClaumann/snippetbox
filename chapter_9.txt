@@ -1,0 +1,207 @@
+Chapter 9 Stateful HTTP
+
+    Exibir uma mensagem de confirmação para o usuário após ele adicionar um novo snippet.
+    A mensagem deve ser exibida para o usuário uma única vez imediatamente adicionar um novo snippet.
+    Somente o usuário que adicionou o snippet deve ver essa mensagem.
+    Para fazer isso será preciso compartilhar o estado da sessão entre as requisições HTTP do mesmo usuário.
+
+    9.1 Choosing a session manager
+
+        É recomendado utilizar:
+            gorilla/sessions
+                O pacote mais estebelecido e conhecido para 'session management' em go.
+                Possui uma API simples e fácil de usar.
+                Permite armazenar dados da sessão no cllient-side(cookies encriptados) ou server-side(MysSQL, PostgreSQL ou Redis).
+                Não possui um mecanismo para renovar 'session IDs', o que é necessario para reduzir os ataques de 'session fixation' quando
+                estiver usando um dos storages disponiveis no server-side.
+            
+            alexedwards/scs
+                Permite armazenar 'session data' apenas no server-side.
+                Suporta diferentes bancos de dados(MySQL, PosgreSQL ou Redis).
+                Suporta carregar e armazenar 'session data' através de middlewares.
+                Possusi uma ótimo interface type-safe para manipulação de dados e é capaz de renovar os 'session IDs'.
+            
+        Se você deseja armazenar os dados da sessão no client-side, gorilla/sessions é a uma boa escolha.
+        Em outros casos alexedwards/scs é uma opção devido a habilidade de renovar 'session IDs'.
+
+        Vídeo(brasileiro) sobre Session Management em Go usando alexedwards/scs:
+            https://www.youtube.com/watch?v=vlE7BXqqeT0
+
+        Instalando alexedwards/scs:
+            $ go get github.com/alexedwards/scs/v2@v2
+            $ go get github.com/alexedwards/scs/mysqlstore
+    
+    9.2 Setting up the session manager
+
+        Neste capitulo entenderemos o processo de configuração e utilização do pacote alexedwards/scs.
+
+        Criar a tabela sessions para armazenar dados de sessão dos usuários.
+                USE snippetbox;
+
+                CREATE TABLE sessions (
+                    token CHAR(43) PRIMARY KEY,
+                    data BLOB NOT NULL,
+                    expiry TIMESTAMP(6) NOT NULL
+                );
+
+                CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+        
+            - 'token' recebe um ID aleatório usado para identificar a sessão
+            - 'data' contém os dados que serão compartilhados entre as requisições HTTP
+            - 'expiry' contém o tempo de expiração da sessão. O pacote alexedwards/scs delete
+              sessões expiradas automaticamente para não deixar a tabela crescer demais.
+
+            docker exec -it snippet-db mysql -u root -p
+            sh-4.4# mysql -u root -p
+            mysql>  SHOW databases;
+                        +--------------------+
+                        | Database           |
+                        +--------------------+
+                        | snippetbox         |
+                        +--------------------+
+            mysql>  USE snippetbox
+                        Database changed
+            
+            mysql>  CREATE TABLE sessions (
+                        token CHAR(43) PRIMARY KEY,
+                        data BLOB NOT NULL,
+                        expiry TIMESTAMP(6) NOT NULL
+                    );
+                        Query OK, 0 rows affected (0.02 sec)
+            
+            mysql> CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+                        Query OK, 0 rows affected (0.02 sec)
+                        Records: 0  Duplicates: 0  Warnings: 0
+        
+        Estabelecer o 'session manager' no main.go e torna-lo disponível para os handlers através da struct application.
+        O 'session manager' contém configurações das sessões, provê middlewares e métodos auxiliares para salvar e carregar dados da sessão.
+
+        O scs.New() retorna um ponteiro para struct que armazena as configurações da sessão.
+        0 campo Store e Lifetime são configurações de armazenamento e duração da sessão.
+        A struct SessionManager possui outros campos para configuração: https://pkg.go.dev/github.com/alexedwards/scs/v2#SessionManager
+    
+        Será preciso 'wrap' as rotas da aplicação com um middleware fornecido pelo SessionManger.
+        O middleware SessionManager.LoadAndSave() carrega e salva os dados da sessão para cada requisição e resposta HTTP.
+        Este middleware não precisa 'wrap' todas as rotas, por exemplo, '/static/*filepath' só serve arquivos estáticos e não precisa de sessão.
+
+        Por este motivo não faz sentido adicionar LoadAndSave() a cadeia de middlewares existente chamada standard.
+        Ao invés disso, criar uma nova cadeia de middlewares 'dynamic' contendo os middlewares apropriados para as rotas dinamicas.
+
+            ROUTES.GO ANTES:
+                fileServer := http.FileServer(http.Dir("./ui/static/"))
+                router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+                
+            	router.HandlerFunc(http.MethodGet,  "/",                    app.home)
+                router.HandlerFunc(http.MethodGet,  "/snippet/view/:id",    app.snippetView)
+                router.HandlerFunc(http.MethodGet,  "/snippet/create",      app.snippetCreate)
+                router.HandlerFunc(http.MethodPost, "/snippet/create",      app.snippetCreatePost)
+
+            	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+            	return standard.Then(router)
+
+            ROUTES.GO DEPOIS:
+                fileServer := http.FileServer(http.Dir("./ui/static/"))
+                router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+
+                dynamic := alice.New(app.sessionManager.LoadAndSave)
+                
+                router.Handler(http.MethodGet,  "/",                    dynamic.ThenFunc(app.home))
+                router.Handler(http.MethodGet,  "/snippet/view/:id",    dynamic.ThenFunc(app.snippetView))
+                router.Handler(http.MethodGet,  "/snippet/create",      dynamic.ThenFunc(app.snippetCreate))
+                router.Handler(http.MethodPost, "/snippet/create",      dynamic.ThenFunc(app.snippetCreatePost))
+
+                standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+                return standard.Then(router)
+    
+    9.3 Working with session data
+
+            Atualizar snippetCreatePost para que uma 'flash message' seja adicionada ao context
+            se e somente se o snippet for adicionado com sucesso.
+
+                // Use the Put() method to add a string value ("Snippet successfully 
+                // created!") and the corresponding key ("flash") to the session data.
+                app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
+
+                -   O r.Context() é o contexto da requisição, pode-ser imaginar que é um lugar onde o Session Manager
+                    armazena informações temporarias enquanto os handlers lidam com as requisições.
+                -   O "flash" é a chave da mensagem, será usado para recuperar a mensagem nos próximos passos.
+
+            Deve-se adicionar um campo chamado Flash do tipo string na struct templateData de templates.go
+
+                type templateData struct {
+                    CurrentYear int
+                    Snippet     *models.Snippet
+                    Snippets    []*models.Snippet
+                    Form        any
+                    Flash       string // Add a Flash field to the templateData struct.
+                }
+            
+            Fazer com que snippetView recupere a mensagem "flash" do contexto para que a ela seja enviada ao html/tmpl.
+            Como a mensagem deve ser exibida e removida logo em seguida, usa-se o método PopString().
+            Este método recupera o valor da chave("flash") e em seguida o remove do context.
+
+            Atualizar o base.tmpl para que ele exiba a mensagem "flash".
+            Lembrando que o bloco {{with .Flash}} só é executado se o valor de Flash não for uma string vazia.
+
+            Se houver uma key "flash" no context significa que o cliente acabou de criar um snippet.
+                - PopString() vai retornar o valor de "flash"
+                - templateData.File vai estar com o valor de "flash"
+                - base.tmpl vai exibir a mensagem na tela
+
+            Sempre que o cliente cria um snippet a mensagem "flash" é adicionada no contexto, porém logo após a criação
+            do snippet o cliente é redirecionado para 'snippet/{id}' que por sua vez usa o PopString() para obter e excluir a mensagem do context.
+
+            Quando o cliente abrir 'snippet/{id}' o método PopString() vai retornar uma string vazia e por consequencia
+            o bloco {{with .Flash}} no base.tmpl não exibirá esta pseudo mensagem.
+    
+        Auto-displaying flash messages
+
+            Iniciar o campo Flash de templateData no 'construtor' newTemplateData() em helpers.go.
+            O campo é iniciado tentando obter a mensagem "flash".
+
+                return &templateData{
+                    CurrentYear: time.Now().Year(),
+                    Flash:       app.sessionManager.PopString(r.Context(), "flash"),
+                }
+
+            Desta forma é possível remover a chamada PopString() de snippetView.
+            Sempre que snippetView invocar newTemplateData() a função PopString() será invocada para iniciar o campo Flash de templateData.
+            O "flash" só existirá na sessão quando o cliente criar um novo snippet.
+
+            :4000/
+
+                :4000/snippet/create
+                | adiciona "flash"
+                | redirecionado
+
+                    :4000/snippet/view/{id}
+                    | chama newTemplateData()
+                        | tenta obter e remover "flash" (flash possui uma mensagem)
+                        | retorna templateData com Flash diferente de vazio
+                    | mensagem "flash" exibida em base.tmpl {{with .Flash}}
+
+            :4000/
+
+                :4000/snippet/view
+                | chama newTemplateData()
+                    | tenta obter e remover "flash" (flash é uma string vazia)
+                    | retorna templateData com Flash vazio
+                | mensagem "flash" não exibida em base.tmpl {{with .Flash}}
+        
+        Additional information
+
+            Ao inspecionar os dados da requisição é possível encontrar o cookie chamado 'session'.
+            Este cookie é reenviado a aplicação em todas as requisições.
+
+            O session token é um ID único usado para identificar a sessão, ele não carrega nenhuma informação relevante.
+            Este session token é usado como chave primaria na tabela do MySQL que armazena as informações da sessão.
+
+            Data é o campo que contém as informações da sessão, ele é do tipo BLOB(binary large object) e contém as informações
+            da sessão encodadas com gob. (https://pkg.go.dev/encoding/gob)
+            Todas as alteraçõs nos dados da sessão serão refletidos no campo data.
+
+            O que acontece com a aplicação que usa o middleware LoadAndSave()?
+                Toda vez que uma requisição chega este middleware verifica se existe um session cookie.
+                Se existir um session cookie, ele lerá as informações da sessão no banco de dados MySQL.
+                Então ele adiciona as informações da sessão no Request Context.
+                Ele também atualiza o banco de dados quando os dados da sessão são alterados.
