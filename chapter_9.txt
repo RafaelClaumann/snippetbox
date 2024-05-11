@@ -1,0 +1,32 @@
+Chapter 9 Stateful HTTP
+
+    Exibir uma mensagem de confirmação para o usuário após ele adicionar um novo snippet.
+    A mensagem deve ser exibida para o usuário uma única vez imediatamente adicionar um novo snippet.
+    Somente o usuário que adicionou o snippet deve ver essa mensagem.
+    Para fazer isso será preciso compartilhar o estado da sessão entre as requisições HTTP do mesmo usuário.
+
+    9.1 Choosing a session manager
+
+        É recomendado utilizar:
+            gorilla/sessions
+                O pacote mais estebelecido e conhecido para 'session management' em go.
+                Possui uma API simples e fácil de usar.
+                Permite armazenar dados da sessão no cllient-side(cookies encriptados) ou server-side(MysSQL, PostgreSQL ou Redis).
+                Não possui um mecanismo para renovar 'session IDs', o que é necessario para reduzir os ataques de 'session fixation' quando
+                estiver usando um dos storages disponiveis no server-side.
+            
+            alexedwards/scs
+                Permite armazenar 'session data' apenas no server-side.
+                Suporta diferentes bancos de dados(MySQL, PosgreSQL ou Redis).
+                Suporta carregar e armazenar 'session data' através de middlewares.
+                Possusi uma ótimo interface type-safe para manipulação de dados e é capaz de renovar os 'session IDs'.
+            
+        Se você deseja armazenar os dados da sessão no client-side, gorilla/sessions é a uma boa escolha.
+        Em outros casos alexedwards/scs é uma opção devido a habilidade de renovar 'session IDs'.
+
+        Vídeo(brasileiro) sobre Session Management em Go usando alexedwards/scs:
+            https://www.youtube.com/watch?v=vlE7BXqqeT0
+
+        Instalando alexedwards/scs:
+            $ go get github.com/alexedwards/scs/v2@v2
+            $ go get github.com/alexedwards/scs/mysqlstore
