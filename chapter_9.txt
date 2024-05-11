@@ -187,3 +187,21 @@ Chapter 9 Stateful HTTP
                     | tenta obter e remover "flash" (flash é uma string vazia)
                     | retorna templateData com Flash vazio
                 | mensagem "flash" não exibida em base.tmpl {{with .Flash}}
+        
+        Additional information
+
+            Ao inspecionar os dados da requisição é possível encontrar o cookie chamado 'session'.
+            Este cookie é reenviado a aplicação em todas as requisições.
+
+            O session token é um ID único usado para identificar a sessão, ele não carrega nenhuma informação relevante.
+            Este session token é usado como chave primaria na tabela do MySQL que armazena as informações da sessão.
+
+            Data é o campo que contém as informações da sessão, ele é do tipo BLOB(binary large object) e contém as informações
+            da sessão encodadas com gob. (https://pkg.go.dev/encoding/gob)
+            Todas as alteraçõs nos dados da sessão serão refletidos no campo data.
+
+            O que acontece com a aplicação que usa o middleware LoadAndSave()?
+                Toda vez que uma requisição chega este middleware verifica se existe um session cookie.
+                Se existir um session cookie, ele lerá as informações da sessão no banco de dados MySQL.
+                Então ele adiciona as informações da sessão no Request Context.
+                Ele também atualiza o banco de dados quando os dados da sessão são alterados.
