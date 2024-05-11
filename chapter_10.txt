@@ -27,3 +27,9 @@ Chapter 10 Security improvements
             1 - gera um key-pair RSA 2048, que são uma chave pública e uma chave privada criptograficamente seguras.
             2 - armazena a chave privada em key.pem, então gera um self-signed certificate para localhost contendo
                 a chave pública e o armazena em cert.pem.
+    
+    10.2 Running a HTTPS server
+        Tendo o self-signed certificate(cert.pem) e a chave privada correspondente fica fácil iniciar o servidor HTTPS.
+        Mudar de  srv.ListenAndServe() para  srv.ListenAndServeTLS() em main.go.
+
+            err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
