@@ -33,3 +33,23 @@ Chapter 10 Security improvements
         Mudar de  srv.ListenAndServe() para  srv.ListenAndServeTLS() em main.go.
 
             err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+    
+    10.3 Configuring HTTPS settings
+        
+            É recomendado limitar as 'elliptc curves' que podem ser usadas durante o TLS handshake.
+            O Go suporta diferentes 'elliptc curves', mas a partir do go 1.18 apenas tls.CurveP256 e tls.X25519
+            tem implementação em assembly.
+            As outras 'elliptc curves' são CPU intensive, omiti-las ajuda a garantir que o servidor conseguirá performar sob altas cargas.
+
+            Criar uma struct tls.Config contendo as configurações não default de TLS e adiciona-la ao campo TLSConfig do http.Server.
+
+        Additional information
+
+            TLS versions
+                As versões do TLS são definidas como constantes no pacote crypt/tls e o HTTP Server suporta TLS 1.0 a 1.3.
+                É possível configurar a versão minima e versão máxima do TLS através dos campos tls.Config.MinVersion e  tls.Config.MaxVersion.
+
+                tlsConfig := &tls.Config{
+                    MinVersion: tls.VersionTLS12,
+                    MaxVersion: tls.VersionTLS12,
+                }
