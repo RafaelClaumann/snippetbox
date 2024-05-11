@@ -1,0 +1,168 @@
+Chapter 8 Processing forms
+
+    Permitir que usuários criem Snippets usando form HTML.
+    Seguindo o padrão POST-REDIRECT-GET:
+        - Usuário recebe o form em branco em GET /snippet/create
+        - Usuário preenche o form e submete POST /snippet/create
+        - Os dados do form sao validados. Se houver erro de validação o campo será destacado(highlight).
+          Com o sucesso na validação o Snippet será adicionado ao banco de dados e o usuário redirecionado para /snippet/view/:id.
+    
+    Chapter 8.1 Setting up a HTML form
+
+        Criar um arquivo ui/html/pages/create.tmpl.
+        O detalhe mais importante deste arquivo são os atributos action e method do form que submetem o form com um POST em /snippet/create.
+
+        Adicionar um link 'Create snippet' no nav(/ui/html/partials/nav.tmpl).
+
+        Atualizar o handler snippetCreateForm para que renderize a nova pagina(create.tmpl).
+
+
+    8.2 Parsing form data
+
+        Atualizar o handler snippetCreatePost responsável por POST /snippets/create para que ele processe as informações do formulário.
+            
+            1.  Usar o método r.ParseForm() para analisar o Request Body.
+                Este método verifica que o Request Body está 'well-formed' e armazena as informanções em r.PostForm e r.Form.
+                Se houver um algum problema no processamento r.ParseForm() retornará um erro.
+                O r.ParseForm() é idempotente, pode ser invocado múltiplas vezes na mesma requisição sem gerar efeitos colaterais.
+            
+            2.  Obter os dados do formulário r.PostForm().Get().
+                Por exemplo, obtendo o titulo do snippet r.PostForm().Get('title').
+                Se a chave 'tittle' não existisse o método Get() retornária uma string vazia.
+
+        Additional information
+
+            The r.Form map
+                
+                Também é possível acesas os dados do formulário usando r.Form().
+                O r.PostForm só é preenchido por requests do tipo POST, PUT e PATCH.
+                O r.Form é populado em todo tipo de requisição, ele armazena os dados do formulário, request body e query string parameters.
+                Ao acessar /snippet/create?foo=bar será possível obter o valor de foo usando r.Form().Get('foo')
+
+            The FormValue and PostFormValue methods
+
+                O pacote net/http também fornece os métodos r.FormValue() e r.PostFormValue().
+                Eles são atalhos para r.ParseForm() e recuperam o valor dos campos de r.Form ou r.PostForm.
+            
+            Multiple-value fields
+
+                O r.PostForm.Get() retorna especificamente o primeiro valor de um campo especifico.
+                Isso signfica que não é possível usa-lo em formulários que enviam multiplos valores para o mesmo campo(check boxes).
+                Neste caso será preciso usar o r.PostForm() diretamente.
+
+    8.3 Validating form data
+
+        - verificar se o 'title' e 'content' não estão vazios
+        - garantir que o 'title' não tem mais do que 100 caracteres
+        - verificar que 'expires' corresponde aos valores permitidos
+
+        Atualizar o handler snippetCreatePost.
+
+
+        len() conta a quantidade de bytes, ou seja, "Zoë" possui 4 bytes.
+        utf8.RuneCountInString() conta a quantidade de caracteres, ou seja, "Zoë" tem 3 caracteres.
+    
+    8.4 Displaying errors and repopulating fields
+
+        Agora que snippetCreatePost valida os dados, o próximo passo é lidar com os erros de forma amigavel.
+        Se houver um erro de validação o form deve ser reexibido mantendo os dados inseridos previamente e destacando os campos com problemas.
+
+        Adicionar um campo Form do tipo any a struct templateData.
+        Este campo será usado para passar os erros de validação e dados previamente preenchidos de volta para o template quando o form for reexibido.
+        
+        Definir uma nova struct chamada snippetCreateForm em cmd/web/handlers.go para segurar os dados do formulário e os erros de validação.
+        Após a validação, se houver algum erro, invocar app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data).
+        O argumento data é a struct snippetCreateForm que contém os dados do formulário invalido.
+
+        Updating the HTML template
+            
+            É preciso atualizar create.tmpl para que destaque os campos invalidados e re-exiba os dados previamente inseridos pelo usuário.
+
+                type snippetCreateForm struct {
+                    Title       string
+                    Content     string
+                    Expires     int
+                    FieldErrors map[string]string
+                }
+
+                type templateData struct {
+                    CurrentYear int
+                    Snippet     *models.Snippet
+                    Snippets    []*models.Snippet
+                    Form        any
+                }
+
+            Na chamada app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+            usada para renderizar 'create.tmpl' após um erro de validação o struct data é um
+            templateData cujo campo Form é o snippetCreateForm.
+
+            Por isso é possível fazer .Form.Tittle e .Form.FieldErrors.
+
+            Para re-exibir os dados é preciso acessar o Form usando {{.Form.Title}} e {{.Form.Content}}.
+
+            Para exibir a mensagem de erro na validação do 'title' basta fazer {{.Form.FieldErrors.title}}
+            Isso acessará o map FieldErrors map[string]string.
+
+            É preciso criar um novo snippetCreateForm em handlers.snippetCreate(), caso contrário ao acessar
+            '/snippet/create' ocorrerá um erro dizendo que o campo Form de templateData é null.
+    
+    8.5 Creating validation helpers
+
+        Se a aplicação possuir muitos formulários ficará dificil lidar com a validação se ela estiver implementada como visto nas
+        seções anteriores.
+
+        Criar o arquivo internal/validator/validator.go para validação customizada, abstração e simplificação de código.
+
+        Using the helpers
+
+            Embutir uma instancia de Validator na struct handlers.snippetCreateForm.
+            https://eli.thegreenplace.net/2020/embedding-in-go-part-1-structs-in-structs/
+    
+    8.6 Automatic form parsing
+
+            É possível automatizar a conversão dos dados obtidos do formulário para struct createSnippetForm
+            usando pacotes de terceiros como go-playground/form e gorilla/schema.
+
+            Instalando go-playground/form:
+                go get github.com/go-playground/form/v4@v4
+        
+        Using the form decoder
+
+            Inicializar uma instância de *form.Decoder no main.go e deixa-la
+            disponivel para os handlers através de injeção de dependencia.
+
+            Adicionar o campo formDecoder na struct application do main.go.
+            Inicializar o formDecoder em main() - formDecoder := form.NewDecoder() - e adiciona-la na instancia de appliacation.
+
+            Atualizar o handlers.go para usar o novo formDecoder.
+
+            Agora é possivel definir tags simples na struct para que o formDecoder consiga mapear form x struct facilmente.
+
+            A conversão de tipos acontece automaticamente, veja que expires é convertido de string para inteiro automaticamente.
+
+                type Request struct {
+                    URL *url.URL
+                    Header Header
+                    Body io.ReadCloser
+                    Form url.Values
+                    PostForm url.Values
+                }
+                    
+                É assim que o campo Form de http.Request se parece após o envio do formulário:
+                    
+                    net/url.Values ["title": ["aaaa"], "content": ["aaaaa"], "expires": ["365"], ]
+                
+        Creating a decodePostForm helper
+
+            A chamada a app.formDecoder.Decode() recebe um ponteiro não nulo para a struct que será mapeada com os campos do form.
+            Se algo diferente do ponteiro não nulo for fornecido, o método retornará um erro form.InvalidDecoderError.
+            Se isso acontecer, significa que existe um problema crítico com a aplicação, nãofoi um erro de input por parte do cliente.
+
+            Criar o decodePostForm() para resolver o problema citado acima.
+            Ele fará três coisas:
+                - invocar r.ParseForm() na requisição atual
+                - invocar app.formDecoder.Decode() para 'descompactar' os dados do HTML form na struct de destino
+                - verificar o erro form.InvalidDecoderError e 'triggar' um panic caso o erro seja encontrado
+            
+            Criar o decodePostForm() em helpers.go.
+            Atualizar o handler createSnippetPost() para que deixe de usar r.ParseForm() e use decodePostForm().
