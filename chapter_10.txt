@@ -1,0 +1,29 @@
+Chapter 10 Security improvements
+    
+    Serão feitas atualizações para manter os dados em trânsito seguros e fazer com que o
+    servidor é mais capaz de lidar com alguns tipos comuns de ataques de negação de serviço.
+
+    10.1 Generating a self-signed TLS certificate
+
+        HTTPS é basicamente HTTP transferido através de uma conexão TLS(Transport Layer Security).
+        Os dados são criptografados e assinados, garantindo a privacidade e segurança em trânsito.
+
+        Antes de configurar a aplicação para usar HTTPS é preciso gerar um certificado TLS.
+        A maneira mais simples de fazer isso em desenvolvimento é através de self-signe certificate.
+        Um self-signed certificate é a mesma coisa que um certificado TLS normal, exceto que ele não é
+        assinado criptograficamete por uma autoridade certificadora confiável(trusted certificate authority).
+        O pacote crypto/tls na biblioteca padrão do Go fornece a ferramenta generate_cert.go que facilita a criação do certificado.
+
+        Criar um diretório chamado tls no projeto.
+
+        Para executar generate_cert.go é preciso saber o local de instação do Go.
+        Geralmente este arquivo fica localizado em /usr/local/go/src/crypto/tls.
+
+            mkdir tls
+            cd tls
+            go run /bin/go/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+            # go run ./generate_cert.go --rsa-bits=2048 --host=localhost
+        
+            1 - gera um key-pair RSA 2048, que são uma chave pública e uma chave privada criptograficamente seguras.
+            2 - armazena a chave privada em key.pem, então gera um self-signed certificate para localhost contendo
+                a chave pública e o armazena em cert.pem.
