@@ -151,3 +151,18 @@ Chapter 8 Processing forms
                 É assim que o campo Form de http.Request se parece após o envio do formulário:
                     
                     net/url.Values ["title": ["aaaa"], "content": ["aaaaa"], "expires": ["365"], ]
+                
+        Creating a decodePostForm helper
+
+            A chamada a app.formDecoder.Decode() recebe um ponteiro não nulo para a struct que será mapeada com os campos do form.
+            Se algo diferente do ponteiro não nulo for fornecido, o método retornará um erro form.InvalidDecoderError.
+            Se isso acontecer, significa que existe um problema crítico com a aplicação, nãofoi um erro de input por parte do cliente.
+
+            Criar o decodePostForm() para resolver o problema citado acima.
+            Ele fará três coisas:
+                - invocar r.ParseForm() na requisição atual
+                - invocar app.formDecoder.Decode() para 'descompactar' os dados do HTML form na struct de destino
+                - verificar o erro form.InvalidDecoderError e 'triggar' um panic caso o erro seja encontrado
+            
+            Criar o decodePostForm() em helpers.go.
+            Atualizar o handler createSnippetPost() para que deixe de usar r.ParseForm() e use decodePostForm().
