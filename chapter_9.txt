@@ -30,3 +30,85 @@ Chapter 9 Stateful HTTP
         Instalando alexedwards/scs:
             $ go get github.com/alexedwards/scs/v2@v2
             $ go get github.com/alexedwards/scs/mysqlstore
+    
+    9.2 Setting up the session manager
+
+        Neste capitulo entenderemos o processo de configuração e utilização do pacote alexedwards/scs.
+
+        Criar a tabela sessions para armazenar dados de sessão dos usuários.
+                USE snippetbox;
+
+                CREATE TABLE sessions (
+                    token CHAR(43) PRIMARY KEY,
+                    data BLOB NOT NULL,
+                    expiry TIMESTAMP(6) NOT NULL
+                );
+
+                CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+        
+            - 'token' recebe um ID aleatório usado para identificar a sessão
+            - 'data' contém os dados que serão compartilhados entre as requisições HTTP
+            - 'expiry' contém o tempo de expiração da sessão. O pacote alexedwards/scs delete
+              sessões expiradas automaticamente para não deixar a tabela crescer demais.
+
+            docker exec -it snippet-db mysql -u root -p
+            sh-4.4# mysql -u root -p
+            mysql>  SHOW databases;
+                        +--------------------+
+                        | Database           |
+                        +--------------------+
+                        | snippetbox         |
+                        +--------------------+
+            mysql>  USE snippetbox
+                        Database changed
+            
+            mysql>  CREATE TABLE sessions (
+                        token CHAR(43) PRIMARY KEY,
+                        data BLOB NOT NULL,
+                        expiry TIMESTAMP(6) NOT NULL
+                    );
+                        Query OK, 0 rows affected (0.02 sec)
+            
+            mysql> CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+                        Query OK, 0 rows affected (0.02 sec)
+                        Records: 0  Duplicates: 0  Warnings: 0
+        
+        Estabelecer o 'session manager' no main.go e torna-lo disponível para os handlers através da struct application.
+        O 'session manager' contém configurações das sessões, provê middlewares e métodos auxiliares para salvar e carregar dados da sessão.
+
+        O scs.New() retorna um ponteiro para struct que armazena as configurações da sessão.
+        0 campo Store e Lifetime são configurações de armazenamento e duração da sessão.
+        A struct SessionManager possui outros campos para configuração: https://pkg.go.dev/github.com/alexedwards/scs/v2#SessionManager
+    
+        Será preciso 'wrap' as rotas da aplicação com um middleware fornecido pelo SessionManger.
+        O middleware SessionManager.LoadAndSave() carrega e salva os dados da sessão para cada requisição e resposta HTTP.
+        Este middleware não precisa 'wrap' todas as rotas, por exemplo, '/static/*filepath' só serve arquivos estáticos e não precisa de sessão.
+
+        Por este motivo não faz sentido adicionar LoadAndSave() a cadeia de middlewares existente chamada standard.
+        Ao invés disso, criar uma nova cadeia de middlewares 'dynamic' contendo os middlewares apropriados para as rotas dinamicas.
+
+            ROUTES.GO ANTES:
+                fileServer := http.FileServer(http.Dir("./ui/static/"))
+                router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+                
+            	router.HandlerFunc(http.MethodGet,  "/",                    app.home)
+                router.HandlerFunc(http.MethodGet,  "/snippet/view/:id",    app.snippetView)
+                router.HandlerFunc(http.MethodGet,  "/snippet/create",      app.snippetCreate)
+                router.HandlerFunc(http.MethodPost, "/snippet/create",      app.snippetCreatePost)
+
+            	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+            	return standard.Then(router)
+
+            ROUTES.GO DEPOIS:
+                fileServer := http.FileServer(http.Dir("./ui/static/"))
+                router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+
+                dynamic := alice.New(app.sessionManager.LoadAndSave)
+                
+                router.Handler(http.MethodGet,  "/",                    dynamic.ThenFunc(app.home))
+                router.Handler(http.MethodGet,  "/snippet/view/:id",    dynamic.ThenFunc(app.snippetView))
+                router.Handler(http.MethodGet,  "/snippet/create",      dynamic.ThenFunc(app.snippetCreate))
+                router.Handler(http.MethodPost, "/snippet/create",      dynamic.ThenFunc(app.snippetCreatePost))
+
+                standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+                return standard.Then(router)
