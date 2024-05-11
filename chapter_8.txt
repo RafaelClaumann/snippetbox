@@ -117,3 +117,37 @@ Chapter 8 Processing forms
 
             Embutir uma instancia de Validator na struct handlers.snippetCreateForm.
             https://eli.thegreenplace.net/2020/embedding-in-go-part-1-structs-in-structs/
+    
+    8.6 Automatic form parsing
+
+            É possível automatizar a conversão dos dados obtidos do formulário para struct createSnippetForm
+            usando pacotes de terceiros como go-playground/form e gorilla/schema.
+
+            Instalando go-playground/form:
+                go get github.com/go-playground/form/v4@v4
+        
+        Using the form decoder
+
+            Inicializar uma instância de *form.Decoder no main.go e deixa-la
+            disponivel para os handlers através de injeção de dependencia.
+
+            Adicionar o campo formDecoder na struct application do main.go.
+            Inicializar o formDecoder em main() - formDecoder := form.NewDecoder() - e adiciona-la na instancia de appliacation.
+
+            Atualizar o handlers.go para usar o novo formDecoder.
+
+            Agora é possivel definir tags simples na struct para que o formDecoder consiga mapear form x struct facilmente.
+
+            A conversão de tipos acontece automaticamente, veja que expires é convertido de string para inteiro automaticamente.
+
+                type Request struct {
+                    URL *url.URL
+                    Header Header
+                    Body io.ReadCloser
+                    Form url.Values
+                    PostForm url.Values
+                }
+                    
+                É assim que o campo Form de http.Request se parece após o envio do formulário:
+                    
+                    net/url.Values ["title": ["aaaa"], "content": ["aaaaa"], "expires": ["365"], ]
