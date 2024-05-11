@@ -112,3 +112,44 @@ Chapter 9 Stateful HTTP
 
                 standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
                 return standard.Then(router)
+    
+    9.3 Working with session data
+
+        Atualizar snippetCreatePost para que uma 'flash message' seja adicionada ao context
+        se e somente se o snippet for adicionado com sucesso.
+
+            // Use the Put() method to add a string value ("Snippet successfully 
+            // created!") and the corresponding key ("flash") to the session data.
+            app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
+
+            -   O r.Context() é o contexto da requisição, pode-ser imaginar que é um lugar onde o Session Manager
+                armazena informações temporarias enquanto os handlers lidam com as requisições.
+            -   O "flash" é a chave da mensagem, será usado para recuperar a mensagem nos próximos passos.
+
+        Deve-se adicionar um campo chamado Flash do tipo string na struct templateData de templates.go
+
+            type templateData struct {
+                CurrentYear int
+                Snippet     *models.Snippet
+                Snippets    []*models.Snippet
+                Form        any
+                Flash       string // Add a Flash field to the templateData struct.
+            }
+        
+        Fazer com que snippetView recupere a mensagem "flash" do contexto para que a ela seja enviada ao html/tmpl.
+        Como a mensagem deve ser exibida e removida logo em seguida, usa-se o método PopString().
+        Este método recupera o valor da chave("flash") e em seguida o remove do context.
+
+        Atualizar o base.tmpl para que ele exiba a mensagem "flash".
+        Lembrando que o bloco {{with .Flash}} só é executado se o valor de Flash não for uma string vazia.
+
+        Se houver uma key "flash" no context significa que o cliente acabou de criar um snippet.
+            - PopString() vai retornar o valor de "flash"
+            - templateData.File vai estar com o valor de "flash"
+            - base.tmpl vai exibir a mensagem na tela
+
+        Sempre que o cliente cria um snippet a mensagem "flash" é adicionada no contexto, porém logo após a criação
+        do snippet o cliente é redirecionado para 'snippet/{id}' que por sua vez usa o PopString() para obter e excluir a mensagem do context.
+
+        Quando o cliente abrir 'snippet/{id}' o método PopString() vai retornar uma string vazia e por consequencia
+        o bloco {{with .Flash}} no base.tmpl não exibirá esta pseudo mensagem.

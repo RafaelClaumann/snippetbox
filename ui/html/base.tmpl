@@ -21,6 +21,12 @@
             {{template "nav" .}}
             
             <main>
+                <!-- Display the flash message if one exists -->
+                    {{with .Flash}}
+                        <div class='flash'>{{.}}</div>
+                    {{end}}
+                {{template "main" .}}
+
                 {{template "main" .}}
             </main>
 
