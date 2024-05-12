@@ -50,3 +50,30 @@ Chapter 11 User authentication
                         <button>Logout</button>
                     </form>
                 </div>
+    
+    11.2 Creating a users model
+
+        Criar a tabela no banco de dados e o modelo(repository) para acessa-la.
+
+                USE snippetbox;
+
+                CREATE TABLE users (
+                    id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                    name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    hashed_password CHAR(60) NOT NULL,
+                    created DATETIME NOT NULL
+                );
+
+                ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
+            
+            A constraint users_uc_email garante que não existirão dois usuários com o mesmo e-mail.
+    
+        Building the model in Go
+            Definir novos erros no arquivo models/errors.go.
+                var ErrInvalidCredentials = errors.New("models: invalid credentials")
+                var ErrDuplicateEmail = errors.New("models: duplicate email")
+            
+            Criar um novo arquivo models/users.go.
+            
+            Adicionar um campo users do tipo *models.UserModel na struct application em main.go.
