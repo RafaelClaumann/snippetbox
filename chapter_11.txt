@@ -142,3 +142,73 @@ Chapter 11 User authentication
             Do ponto de vista da regra de negócio e integridade de dados está tudo OK.
             Mas, o problema é, como comunicar para o cliente que o e-mail já está em uso?
             Isto será resolvido no final do capitulo
+
+        A brief introduction to bcrypt
+            É uma desejavel que os passwords armazenados no banco de dados como um hash unidirecional.
+            Bcrypt possui uma implementação de helpers para fazer o hash e verificação de passwords.
+
+            Instalando Bcrypt:
+                $ go get golang.org/x/crypto/bcrypt@latest
+
+            A função abaixo
+                hash, err := bcrypt.GenerateFromPassword([]byte("my plain text password"), 12)
+            retorna um hash de 60 caracters, parecido com isso
+                $2a$12$NuTjWXm3KKntReFwyBVHyuf/to.HEwTy.eS206TNfkGfr6HzGJSWG
+            
+            O segundo parâmetro indica o custo, ele é representado por um inteiro de 4 a 31.
+            O exemplo acima usa custo 12, ou seja, 2^12(4096) iterações do brcypt foram usadas para gerar o hash.
+
+            A função abaixo
+                hash := []byte("$2a$12$NuTjWXm3KKntReFwyBVHyuf/to.HEwTy.eS206TNfkGfr6GzGJSWG")
+                err := bcrypt.CompareHashAndPassword(hash, []byte("my plain text password"))
+            compara o password plain-text com um hash.
+            Ela retorna nil se o plai-text password corresponde ao hash e um erro se eles não correspondem.
+        
+        Storing the user details
+            Atualizar UserModel.Insert() para adicionar um novo usuário na tabela usando as informações
+            fornecidas por userSignupPost() e password hasheado com bcrypt.
+                
+                - fazer o hash do password
+                - gerenciar o potencial erro devido a constraint de e-mails duplicados
+            
+            Todos os erros do sql retornam um código particular: https://dev.mysql.com/doc/mysql-errors/8.0/en/
+            No caso de e-mails duplicados o código é 1062 (ER_DUP_ENTRY).
+
+            Atualizar o userSignupPost()
+            Invocar app.users.Inser() passando os parameotros necessários.
+            Lembrando que:
+                main.go
+                    type application struct {
+                        snippets       *models.SnippetModel
+                        users          *models.UserModel
+                    }
+
+                users.go
+                    type UserModel struct {
+                        DB *sql.DB
+                    }
+
+                    func (m *UserModel) Insert(name, email, password string) error {
+                        // hash password
+                        // create statement string with '?' wildcards
+                        // insert with m.DB.Exec()
+                        // verify for  database error 1062 (ER_DUP_ENTRY)
+                        // return nil means user created with success
+                    }
+
+            Além disso, adicionar uma flash message que será exibida quando o usuário se cadastrar.
+                app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+        
+        Additional information
+
+            Alternatives for checking email duplicates
+                O código de UserModel.Insert() não é muito bonito pois faz comparações e se baseia
+                em código/string de erro retornado pelo MySQL.
+                E se uma nova versão do MySQL for lançada com uma alteração na mensagem/codigo de erro?
+
+                Outra opção para validar o e-mail seria criar um método UserModel.EmailTaken() para verificar
+                se o e-mail já está em uso antes do usuário ser inserido no banco de dados.
+
+                A última opção gera uma 'race condition' que é quase impossível de acontecer.
+                Se dois usuários tentarem se cadastrar usando o mesmo e-mail exatamente no mesmo momento.
+                As duas submissões passarão pela validação, mas apenas um INSERT ocorrerá no banco de dados
