@@ -1,1 +1,52 @@
 Chapter 11 User authentication
+    
+    Adicionar autenticação a aplicação:
+        - Apenas usuários registrados e logados conseguirão criar snippets.
+        - Usuários não logados conseguirão ver os snippets.
+        - Usuários não registrados conseguirão se registrar.
+    
+    Passo a passo:
+        - Usuários poderão se registrar em '/user/signup' com nome, email e senha.
+          Uma nova tabela(users) será criada para armazenar os usuários.
+
+        - Usuários farão o login em '/user/login' com email e senha.
+    
+        - Verificar se usuário e senha são compatíveis com os valores recuperados do banco de dados.
+          Se forem compatíveis, o usuário será autenticado e a chave 'authenticatedUserID' será adicionada ao 'session data'.
+
+        - As requisições subsequentes serão verificadas através da chave 'authenticatedUserID'.
+          Se 'authenticatedUserID' existir, significa que o usuário logou com sucesso, essa chave será monitorada a sessão expirar.
+          Se 'authenticatedUserID' não existir, significa que o usuário não está autenticado.
+    
+
+    11.1 Routes setup
+
+            GET     /user/signup    userSignup      Display a HTML form for signing up a new user
+            POST    /user/signup    userSignupPost  Create a new user
+            GET     /user/login     userLogin       Display a HTML form for logging in a user
+            POST    /user/login     userLoginPost   Authenticate and login the user
+            POST    /user/logout    userLogoutPost  Logout the user
+
+        Adicionar a pre-implementação das novas rotas no arquivo handlers.go.
+
+            func (app *application) userSignup(w http.ResponseWriter, r *http.Request)
+            func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request)
+            func (app *application) userLogin(w http.ResponseWriter, r *http.Request)
+            func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request)
+            func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request)
+
+        Configurar as os handlers em routers.go.
+            router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
+            router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignupPost))
+            router.Handler(http.MethodGet, "/user/login", dynamic.ThenFunc(app.userLogin))
+            router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
+            router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
+        Atualizar o nav.tmpl com uma nova <div> para exibir os botões Singup, Login e Logout':
+                <div>
+                    <a href='/user/signup'>Signup</a>
+                    <a href='/user/login'>Login</a>
+                    <form action='/user/logout' method='POST'>
+                        <button>Logout</button>
+                    </form>
+                </div>
