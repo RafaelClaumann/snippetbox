@@ -117,3 +117,28 @@ Chapter 11 User authentication
             O 'userSignupForm' encorpora(embed) a struct 'Validator' que contém o campo 'FieldErrors'.
             É possível acessar 'FieldErrors' a partir de 'userSignupForm': data.Form.FieldErrors.
             O template signup.tmpl recebe 'userSignupForm' e por isso consegue acessar data.Form.FieldErrors.
+    
+        Validating the user input
+            Os dados submetidos em signup.tmpl serão processados no handler userSignupPost.
+            É preciso validar os dados para garantir que são 'sane' antes de inseri-los no banco de dados.
+                1 - Garantir que name, email e password não são blank
+                2 - 'Sanity' check no formato do email
+                3 - Garantir que o password tenha mais do que 8 caracteres
+                4 - Certifique-se de que o endereço de e-mail ainda não esteja em uso
+            
+            Criar dois novos validadores e uma regex para e-mails em Validator.go.
+                - MinChars()
+                - Matches()
+                - var EmailRX = regexp.MustCompile(...)
+            
+                A regex usada é recomendada pela W3C e Web Hypertext Application Technology Working Group.
+                https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+                https://www.w3.org/TR/2016/REC-html51-20161101/sec-forms.html#email-state-typeemail
+            
+            Adicionar código em userSignupPost para processar os dados do form.
+
+            Tudo que restou foi validar que o e-mail inserido no formulário ainda não está em uso.
+            A constraint UNIQUE na coluna email da tabela users garante que o mesmo email não será usado mais de uma vez.
+            Do ponto de vista da regra de negócio e integridade de dados está tudo OK.
+            Mas, o problema é, como comunicar para o cliente que o e-mail já está em uso?
+            Isto será resolvido no final do capitulo
