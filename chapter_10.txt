@@ -53,3 +53,45 @@ Chapter 10 Security improvements
                     MinVersion: tls.VersionTLS12,
                     MaxVersion: tls.VersionTLS12,
                 }
+    
+    10.4 Connection timeouts
+
+        Melhorando a resiliencia da aplicação adicionando configurações de timeout:
+            srv := &http.Server{
+                // Add Idle, Read and Write timeouts to the server.
+                IdleTimeout:  time.Minute,
+                ReadTimeout:  5 * time.Second,
+                WriteTimeout: 10 * time.Second,
+            }
+        Essas configurações são validas para o servidor, ou seja, são aplicadas a todas as requisições recebidas.
+
+        The IdleTimeout setting
+            Por padrão o Go habilita keep-alives em todas as conexões, isso ajuda a diminuir a latencia porque
+            o cliente consegue usar a mesma conexão para múltiplas requisições sem precisar refazer o TLS handshake.
+
+            Conexões keep-alive são encerradas depois de alguns minutos.
+            Não há como aumentar esse tempo, mas é possível diminui-lo através do IdleTimeout.
+        
+        The ReadTimeout setting
+            Se os Headers ou Body da requisição ainda estiverem sendo lidos após 5 segundos(ReadTimeout) depois
+            que a requisição foi aceita pela primeira vez, o Go fechara a conexão.
+
+            Um ReadTimeout baixo evita ataques de clientes lentos Slowloris(https://en.wikipedia.org/wiki/Slowloris_(computer_security)).
+            Estes ataques podem manter conexões abertas por muito tempo enviado requisições HTTP incompletas.
+
+            Se ReadTimeout for definido e IdleTimeout for deixado como está, então IdleTimeout usará a mesma configuração de ReadTimeout.
+        
+        The WriteTimeout setting
+            The WriteTimeout setting will close the underlying connection if
+            our server attempts to write to the connection after a given period.
+                -   For HTTP connections, if some data is written to the connection more than 10 seconds after the read of
+                    the request header finished, Go will close the underlying connection instead of writing the data.
+                
+                -   For HTTPS connections, if some data is written to the connection more than 10 seconds after
+                    the request is first accepted, Go will close the underlying connection instead of writing the data.
+                    This means that if you’re using HTTPS it’s sensible to set WriteTimeout to a value greater than ReadTimeout.
+
+            It’s important to bear in mind that writes made by a handler are buffered and
+            written to the connection as one when the handler returns.
+            The idea of WriteTimeout is generally not to prevent long-running handlers,
+            but to prevent the data that the handler returns from taking too long to write.
