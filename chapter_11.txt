@@ -17,7 +17,6 @@ Chapter 11 User authentication
         - As requisições subsequentes serão verificadas através da chave 'authenticatedUserID'.
           Se 'authenticatedUserID' existir, significa que o usuário logou com sucesso, essa chave será monitorada a sessão expirar.
           Se 'authenticatedUserID' não existir, significa que o usuário não está autenticado.
-    
 
     11.1 Routes setup
 
@@ -77,3 +76,44 @@ Chapter 11 User authentication
             Criar um novo arquivo models/users.go.
             
             Adicionar um campo users do tipo *models.UserModel na struct application em main.go.
+
+    11.3 User signup and password encryption
+
+        É preciso permitir que os usuários registrem suas contas(singup).
+        Criar um novo arquivo ui/html/pages/signup.tmpl.
+        Inserir a struct userSignupForm em handlers.go e atualizar o handler userSignup para que signup.tmpl seja exibido.
+
+            templates.go
+                type templateData struct {
+                    Form        any
+                }
+
+            helpers.go
+                func (app *application) newTemplateData(r *http.Request) *templateData {
+                    return &templateData{
+                        CurrentYear: time.Now().Year(),
+                    }
+                }
+
+            validator.go 
+                type Validator struct {
+                    FieldErrors map[string]string
+                }
+
+            handlers.go
+                type userSignupForm struct {
+                    validator.Validator
+                }
+
+                func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+                    data := app.newTemplateData(r)
+                    data.Form = userSignupForm{}
+
+                    app.render(w, http.StatusOK, "signup.tmpl", data)
+                }
+
+            A chamada a app.newTemplateData(r) cria um novo templateData e o armazena na variável data.
+            O campo Form deste template data recebe um 'userSignupForm'.
+            O 'userSignupForm' encorpora(embed) a struct 'Validator' que contém o campo 'FieldErrors'.
+            É possível acessar 'FieldErrors' a partir de 'userSignupForm': data.Form.FieldErrors.
+            O template signup.tmpl recebe 'userSignupForm' e por isso consegue acessar data.Form.FieldErrors.
