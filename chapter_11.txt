@@ -302,3 +302,30 @@ Chapter 11 User authentication
                     {{if .IsAuthenticated}}
                         <a href='/snippet/create'>Create snippet</a>
                     {{end}}
+        
+        Restricting access
+
+            Usuários não autenticados ainda conseguem acessar '/snippet/create' diretamente.
+            Ajustar para quando um usuário não autenticado acessar '/snippet/create' ou '/user/logout' seja redirecionado para '/user/login'.
+
+            A maneira mais fácil de fazer isso é através de middlewares.
+            Criar o middlware requireAuthentication() em middlewares.go.
+
+            Reorganizar as rotas em dois grupos:
+                - desprotegido, com as rotas que não precisam de proteção, usarão a cadeia 'dynamic' que já existe
+                - protected, consiste na cadeia 'dynamic' com o novo middeware requireAuthentication() adicionado
+            
+        Additional information
+            
+            Without using alice
+                router.Handler(
+                    http.MethodPost,
+                    "/snippet/create",
+                    app.sessionManager.LoadAndSave(
+                        app.requireAuthentication(
+                            http.HandlerFunc(
+                                app.snippetCreate
+                            )
+                        )
+                    )
+                )
