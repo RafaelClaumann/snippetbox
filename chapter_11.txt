@@ -211,4 +211,35 @@ Chapter 11 User authentication
 
                 A última opção gera uma 'race condition' que é quase impossível de acontecer.
                 Se dois usuários tentarem se cadastrar usando o mesmo e-mail exatamente no mesmo momento.
-                As duas submissões passarão pela validação, mas apenas um INSERT ocorrerá no banco de dados
+                As duas submissões passarão pela validação, mas apenas um INSERT ocorrerá no banco de dados.
+    
+    11.4 User login
+
+        Criar o corpo do método Authenticate() em users.go.
+            - recuperar o usuário do DB com QueryRow() usando a coluna e-mail no WHERE
+            - comparar o password passado como parametro com o hashed_password recuperado do DB: bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+            - retornar o id do usuário em casos de sucesso
+            - retornar 0 e um erro associado quando o usuário não for encontrado
+        
+        Atualizar validator.go para suportar erros que não estão associados a um campo específico de formulário.
+
+            type Validator struct {
+                NonFieldErrors []string
+                FieldErrors    map[string]string
+            }
+
+            func (v *Validator) Valid() bool {
+                return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
+            }
+
+            func (v *Validator) AddNonFieldError(message string) {
+                v.NonFieldErrors = append(v.NonFieldErrors, message)
+            }
+        
+        Criar um template de login chamado login.tmpl.
+        
+        Ajustar o handler handlers.go para exibir a pagina de login:
+            - criar uma struct userLoginForm para representar o formulário de login(email e senha)
+            - construir o corpo do handler userLogin() para que login.tmpl seja exibido
+            - construir o corpo do handler userLoginPost() para que o usuário consiga logar
+    
