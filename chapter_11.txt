@@ -242,4 +242,18 @@ Chapter 11 User authentication
             - criar uma struct userLoginForm para representar o formulário de login(email e senha)
             - construir o corpo do handler userLogin() para que login.tmpl seja exibido
             - construir o corpo do handler userLoginPost() para que o usuário consiga logar
-    
+
+    11.5 User logout
+        A implementação do logout é bem direta, basicamente é preciso remover "authenticatedUserID" da sessão.
+        Ao mesmo tempo que é uma boa pratica renovar o ID da sessão quando ocorre uma mudança de privilegios
+        também é importante exibit uma flash message confirmando o logout.
+        
+        Atualizar o handler userLogoutPost.
+            - renovar o ID da sessão porque ocorrerá uma mudança de privilégios
+                app.sessionManager.RenewToken(r.Context())
+            
+            - remover o authenticatedUserID da sessão.
+                app.sessionManager.Remove(r.Context(), "authenticatedUserID"
+            
+            - adicionar a flash message confirmando logout
+            - redirecionar para a home que exibirá a flash message com popString().
