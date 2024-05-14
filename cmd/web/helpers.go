@@ -11,6 +11,12 @@ import (
 	"github.com/go-playground/form/v4"
 )
 
+// Return true if the current request is from an authenticated user, otherwise
+// return false.
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+}
+
 // Create a new decodePostForm() helper method. The second parameter here, dest,
 // is the target destination that we want to decode the form data into.
 func (app *application) decodePostForm(r *http.Request, dest any) error {
@@ -46,8 +52,9 @@ func (app *application) decodePostForm(r *http.Request, dest any) error {
 // struct initialized with the current year.
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r), // Add the authentication status to the template data.
 	}
 }
 

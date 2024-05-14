@@ -257,3 +257,48 @@ Chapter 11 User authentication
             
             - adicionar a flash message confirmando logout
             - redirecionar para a home que exibirá a flash message com popString().
+    
+    11.6 User authorization
+
+        É preciso fazer algo útil a autenticação criada na sessão passadas, aplicaremos autorização aos usuários.
+        
+            - Apenas usuários autenticados conseguirão criar novos snippets
+            - O conteúdo do nav-bar será diferente quando o usuário estiver autenticado ou não
+                - Usuario autenticado -> Home, Create Snippet e Logout
+                - Usuario nao autenticado -> Home, Signup e Login
+
+            Se o usuário estiver autenticado o atributo "authenticatedUserID" existirá na sessão.
+            
+            Criar um método isAuthenticated() em helpers.go para verificar se o usuário está autenticado.
+
+                // Return true if the current request is from an authenticated user, otherwise
+                // return false.
+                func (app *application) isAuthenticated(r *http.Request) bool {
+                    return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+                }
+
+            Passar a informação de autenticação para os templates de forma que consigam ocultar/exibir os menus do nav-bar.
+
+                Adicionar um campo bool chamado IsAuthenticated ao templateData em templates.go.
+                
+                    type templateData struct {
+                        ...
+                        IsAuthenticated bool   // Add an IsAuthenticated field to the templateData struct.
+                    }
+                
+                Atualizar newTemplateData() em helpers.go para que essa informação(IsAuthenticated) seja
+                adicionada ao templateData toda vez que um template for renderizado.
+
+                    // Add the authentication status to the template data.
+                    func (app *application) newTemplateData(r *http.Request) *templateData {
+                        return &templateData{
+                            ...
+                            IsAuthenticated: app.isAuthenticated(r),
+                        }
+                    }
+                
+                Atualizar o ui/html/partials/nav.tmpl para exibir os menus de acordo com a autenticação.
+
+                    {{if .IsAuthenticated}}
+                        <a href='/snippet/create'>Create snippet</a>
+                    {{end}}
