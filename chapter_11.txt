@@ -329,3 +329,98 @@ Chapter 11 User authentication
                         )
                     )
                 )
+
+    11.7 CSRF protection
+
+        Como proteger o site contra Cross-Site Request Forgery
+            https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+        
+        É um ataque onde um sitem malicioso envia uma requisições HTTP capazes de alterar o estado para o seu website.
+
+        - Usuario faz login na aplicação Snippetbox. O cookie de sessão está configurado para persistir por 12 horas.
+        - O usuário navega até um site malicioso que contém código para realizar uma cross-site request em POST '/snippet/create'.
+          O cookie da sessão será enviado junto com esta requisição.
+        - Como a requisição contém o cookie do usuário a aplicação Snippetbox interpreta que ela foi enviada por um usuário logado.
+          A consequencia disto é que um novo snippet sem que o usuário saiba.
+        
+        SameSite cookies            
+            Ao definir o atributo SameSite como SameSite=Lax.
+            
+            O cookie de sessão não será enviado pelo browser do usuário em requisições unsafe(POST, PUT ou DELETE) entre sites.
+            
+            Snippetbox usa POST para alterar o estado da aplicação e POST é considerado 'unsafe' o cookie de sessão não será enviado
+            nessas requisições se elas forem cross-site.
+
+            O atributo SameSite é relativamente novo e é suportado por 90% dos browsers.
+            
+
+            SameSite owasp:
+                https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#samesite-cookie-attribute
+
+            O que é unsafe:
+                https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.1
+            
+        Token-based mitigation
+            Já existem pacotes que implementam este tipo de mitigação e é melhor utiliza-los do que criar sua própria lógica
+            e correr riscos desnecessários.
+
+            Os pacotes 'gorilla/csrf' e 'justinas/nosurf' são recomendados.
+            Ambos fazem mais ou menos a mesma coisa usando o padrão 'double-submit cookie' para previnir ataques.
+
+            Um token CSRF aleatório é gerado e enviado para o usuário em um Cookie CSRF.
+            Este token CSRF é adicionado a um campo oculto em cada formulário HTML vulnerável a CSRF.
+            Quando o formulário é submetido ambos pacotes usam algum middleware para verificar se o campo oculto e o cookie correspondem.
+        
+            Vamos usar Justinas Nosurf:
+                go get github.com/justinas/nosurf@v1
+
+            Token-based mitigation owasp:
+                https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#token-based-mitigation
+            
+            Gorilla CSRF:
+                https://github.com/gorilla/csrf
+            
+            Justinas Nosurf:
+                https://github.com/justinas/nosurf
+
+            double-submit cookie owasp:
+                https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#double-submit-cookie
+        
+        Using the nosurf package
+
+            Criar um middleware chamado noSurf() em middleware.go.
+
+                func noSurf(next http.Handler) http.Handler {
+                    csrfHandler := nosurf.New(next)
+                    csrfHandler.SetBaseCookie(http.Cookie{
+                        HttpOnly: true,
+                        Path:     "/",
+                        Secure:   true,
+                    })
+
+                    return csrfHandler
+                }
+            
+            Um dos formulários que precisa se protegido é o de logout(escrito errado no livro? nao seria login?).
+            Ele está incluído em nav.tmpl e potencialmente pode em todas as páginas da aplicação.
+            Por conta disso precisamos aplicar o middlware noSurf() em todas as rotas exceto 'static/*filepath'.
+
+            Atualizar routes.go e adicionar o middleware noSurf() na cadeia dynamic.
+                
+                dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+            
+            Neste momento a aplicação responderá 400 BAD Request para qualquer form enviado.
+            Para que volte a funcionar é preciso obter o token com nosurf.Token() e adiciona-lo ao campo csrf_token
+            em todos os formulários.
+
+            Adicionar o campo CSRFToken no templateData para que possa ser acessado em todos os templates.
+            Inicializar o campo CSRFToken no helper newTemplateData():
+
+                func (app *application) newTemplateData(r *http.Request) *templateData {
+                    return &templateData{
+                        ...
+                        CSRFToken:       nosurf.Token(r),        // Add the CSRF token.
+                    }
+                }
+            
+            Atualizar todos os formulários para incluir o CSRF Token com campo oculto.
