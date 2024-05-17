@@ -27,4 +27,36 @@ Chater 14 Testing
             Criar o arquivo cmd/web/templates_test.go.
             Executar o teste:
                 go test ./cmd/web
-    
+        
+        Table-driven tests
+
+            Estender TestHumanDate() para que cubra outros casos.
+                - Se a entrada do usuário for zero time(https://pkg.go.dev/time#Time.IsZero), então ele deve retornar uma string vazia.
+                - O output de humanDate() sempre deve estar em UTC time zone.
+            
+            Em Go, Table-driven é uma maneira idiomática de executar vários testes.
+            A ideia por trás disso é criar uma tabela de casos de teste contendo as INPUTS e EXPECTED OUTPUTS
+            e então realizar um loop sob esta tabela executando os casos de testes em sub-tests.
+
+                func TestHumanDate(t *testing.T) {
+                    tests := []struct {
+                        name string
+                        tm   time.Time
+                        want string
+                    }{
+                        {
+                            name: "UTC",
+                            tm:   time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC),
+                            want: "17 Mar 2022 at 10:15",
+                        },
+                    }
+                    for _, tt := range tests {
+                        t.Run(tt.name, func(t *testing.T) {
+                            hd := humanDate(tt.tm)
+
+                            if hd != tt.want {
+                                t.Errorf("got %q; want %q", hd, tt.want)
+                            }
+                        })
+                    }
+                }
