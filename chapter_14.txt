@@ -1,0 +1,111 @@
+Chater 14 Testing
+
+    14.1 Unit testing and sub-tests
+
+        Criar um teste unitário para a função humanDate() garantindo que a saída de time.Time
+        será conforme esperado.
+
+            func humanDate(t time.Time) string {
+                return t.UTC().Format("02 Jan 2006 at 15:04")
+            }
+        
+        Creating a unit test
+
+            A pratica padrão é criaar arquivos *_test.go diratemente ao lado do código que está sendo testado.
+            Este padrão é o mais basico e será usado em quase todos os testes escritos em go.
+                
+                - O teste é um código comum escrito em Go que ivocará humanDate()
+                  e verificará se o resultado é o esperado
+
+                - Os testes são criados dentro de funções Go com assinatura func(*testing.T).
+
+                - Para ser um teste válido a função deve começar com a palavra Test.
+                  Tipicamente 'Test' é seguido do nome da função.
+                
+                - Usar t.Errorf() para indicar que o teste falhou e imprimir uma mensagem de log descritiva sobre a falha.
+
+            Criar o arquivo cmd/web/templates_test.go.
+            Executar o teste:
+                go test ./cmd/web
+        
+        Table-driven tests
+
+            Estender TestHumanDate() para que cubra outros casos.
+                - Se a entrada do usuário for zero time(https://pkg.go.dev/time#Time.IsZero), então ele deve retornar uma string vazia.
+                - O output de humanDate() sempre deve estar em UTC time zone.
+            
+            Em Go, Table-driven é uma maneira idiomática de executar vários testes.
+            A ideia por trás disso é criar uma tabela de casos de teste contendo as INPUTS e EXPECTED OUTPUTS
+            e então realizar um loop sob esta tabela executando os casos de testes em sub-tests.
+
+                func TestHumanDate(t *testing.T) {
+                    tests := []struct {
+                        name string
+                        tm   time.Time
+                        want string
+                    }{
+                        {
+                            name: "UTC",
+                            tm:   time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC),
+                            want: "17 Mar 2022 at 10:15",
+                        },
+                    }
+
+                    for _, tt := range tests {
+                        t.Run(tt.name, func(t *testing.T) {
+                            hd := humanDate(tt.tm)
+
+                            if hd != tt.want {
+                                t.Errorf("got %q; want %q", hd, tt.want)
+                            }
+                        })
+                    }
+                }
+
+        Helpers for test assertions
+
+            Serão escritas diversas asserções para os testes que serão variações deste padrão:
+
+                if actualValue != expectedValue {
+                    t.Errorf("got %v; want %v", actualValue, expectedValue)
+                }
+
+            Será feita uma abstração deste código em uma helper function.
+            Criar o arquivo internal/assert/assert.go.
+
+                func Equal[T comparable](t *testing.T, actual, expected T) {
+                    // Helper marks the calling function as a test helper function.
+                    t.Helper()
+
+                    if actual != expected {
+                        t.Errorf("got: %v; want: %v", actual, expected)
+                    }
+                }
+
+                A chamada t.Helper() indica para o test runner do Go que Equal() é um helper dos testes.
+                Isso significa que quando t.Errorf() for invocado dentro de Equal() o test runner vai
+                reportar o nome do arquivo e a linha do código que invocou Equal() na saída.
+
+            O uso de generics em Equal() torna possível usa-lo independente do tipo que expected e actual são.
+            Desde que expected e actual sejam do mesmo tipo.
+        
+        Additional Information
+
+            Sub-tests without a table of test case
+                
+                É importante ressaltar que você não precisa usar subtestes em conjunto com table-driven-tests.
+                É comletamente válido executar sub-tests invocando t.Run().
+
+                    func TestExample(t *testing.T) {
+                        t.Run("Example sub-test 1", func(t *testing.T) {
+                            // Do a test.
+                        })
+
+                        t.Run("Example sub-test 2", func(t *testing.T) {
+                            // Do another test.
+                        })
+
+                        t.Run("Example sub-test 3", func(t *testing.T) {
+                            // And another...
+                        })
+                    }
