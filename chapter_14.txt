@@ -1,0 +1,30 @@
+Chater 14 Testing
+
+    14.1 Unit testing and sub-tests
+
+        Criar um teste unitário para a função humanDate() garantindo que a saída de time.Time
+        será conforme esperado.
+
+            func humanDate(t time.Time) string {
+                return t.UTC().Format("02 Jan 2006 at 15:04")
+            }
+        
+        Creating a unit test
+
+            A pratica padrão é criaar arquivos *_test.go diratemente ao lado do código que está sendo testado.
+            Este padrão é o mais basico e será usado em quase todos os testes escritos em go.
+                
+                - O teste é um código comum escrito em Go que ivocará humanDate()
+                  e verificará se o resultado é o esperado
+
+                - Os testes são criados dentro de funções Go com assinatura func(*testing.T).
+
+                - Para ser um teste válido a função deve começar com a palavra Test.
+                  Tipicamente 'Test' é seguido do nome da função.
+                
+                - Usar t.Errorf() para indicar que o teste falhou e imprimir uma mensagem de log descritiva sobre a falha.
+
+            Criar o arquivo cmd/web/templates_test.go.
+            Executar o teste:
+                go test ./cmd/web
+    
