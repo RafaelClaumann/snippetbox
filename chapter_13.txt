@@ -1,0 +1,91 @@
+Chapter 13 Optional Go Features
+
+    13.2 Using Generics
+
+            Introduzido no Go 1.18.
+            É um nome ténico para polimorfismo parametrizado.
+            Permite escrever código que funciona para diferentes tipos concretos.
+
+            Em versões anteriores, se fosse preciso verificar a existencia de um valor arbitrário
+            em arrays de tipos diferentes([]string e []int) era preciso criar uma função para cada tipo.
+
+                func containsString(v string, s []string) bool {
+                    for i, vs := range s {
+                        if v == vs {
+                            return true
+                        }
+                    }
+                    return false
+                }
+
+                func containsInt(v int, s []int) bool {
+                    for i, vs := range s {
+                        if v == vs {
+                            return true
+                        }
+                    }
+                    return false
+                }
+            
+            Com generics é possível escrever uma única função capaz de lidar com qualquer 'comparable type'.
+                https://pkg.go.dev/builtin#comparable
+
+                func contains[T comparable](v T, s []T) bool {
+                    for i := range s {
+                        if v == s[i] {
+                            return true
+                        }
+                    }
+                    return false
+                }
+            
+            Para entender um pouco mais de generics: https://go.dev/doc/tutorial/generics
+    
+        When to use generics
+
+            Usar generics de maneira criteriosa e cautelosa.
+            Generics é um novo recurso da linguagem e as melhores práticas para escrever
+            código genérico ainda estão sendo estabelecidas.
+
+            Mesmo com essas ressalvas escrever código com Generics pode ser muito útil em alguns cenários.
+                - Quando estiver escrevendo código boilerplate para diferentes tipos.
+                  Por exemplo: helpers para validação, operações com slice, map e arrays.
+                
+                - Quando estiver escrevendo código e precisar o tipo any(empty interface{}).
+                  Por exemplo: estruturas de dados(queue, cache, linked list) que precisem lidar com diferentes tipos de dados.
+            
+            Por outro lado, nao usar generis quando:
+                - Tornar o código mais dificil e menos legivel.
+                - Se os tipos que você está trabalhando possuirem um conjunto de métodos comuns.
+                - Apenas porque você pode.
+        
+        Using generics in our application
+
+            No proximo capitulo serão escritos testes unitários e fazer isso pode gerar muito código boilerplate duplicado.
+            Usaremos generics para criar helpers genericos para realizar assertions nos testes utilizando diferentes tipos de dados.
+
+            Atualizar a função PermittedInt() de validators.go.
+            Renomea-la para PermittedValue() e torna-la capaz de verificar se valores fornecidos pelo usuário fazem parte
+            do conjunto de valores permitidos.
+
+                // Replace PermittedInt() with a generic PermittedValue() function. This returns
+                // true if the value of type T equals one of the variadic permittedValues 
+                // parameters.
+                func PermittedValue[T comparable](value T, permittedValues ...T) bool {
+                    for i := range permittedValues {
+                        if value == permittedValues[i] {
+                            return true
+                        }
+                    }
+                    return false
+                }  
+
+            Atualizar snippetCreatePost handler para usar PermittedValue().
+
+                // antes
+                form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+
+                // depois
+                form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+            
+            O código deve compilar e ter o mesmo funcionamento após essa alteração.
