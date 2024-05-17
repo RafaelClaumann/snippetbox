@@ -3,9 +3,29 @@ package main
 import (
 	"testing"
 	"time"
+
+	"snippetbox.claumann.net/internal/assert"
 )
 
-func TestHumanDate(t *testing.T) {
+func TestHumanDateBasic(t *testing.T) {
+	tm := time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC)
+	actual := humanDate(tm)
+	want := "17 Mar 2022 at 10:15"
+
+	if actual != "17 Mar 2022 at 10:15" {
+		t.Errorf("got %q; want %q", actual, want)
+	}
+}
+
+func TestHumanDateBasicWithHelper(t *testing.T) {
+	tm := time.Date(2022, 3, 17, 10, 15, 0, 0, time.UTC)
+	actual := humanDate(tm)
+	want := "17 Mar 2022 at 10:15"
+
+	assert.Equal(t, actual, want)
+}
+
+func TestHumanDateTableDriven(t *testing.T) {
 	// Create a slice of anonymous structs containing the test case name,
 	// input to our humanDate() function (the tm field), and expected output
 	// (the want field).
@@ -38,11 +58,10 @@ func TestHumanDate(t *testing.T) {
 		// identify the sub-test in any log output) and the second parameter is
 		// an anonymous function containing the actual test for each case.
 		t.Run(tt.name, func(t *testing.T) {
-			hd := humanDate(tt.tm)
+			actual := humanDate(tt.tm)
 
-			if hd != tt.want {
-				t.Errorf("got %q; want %q", hd, tt.want)
-			}
+			// Use the new assert.Equal() helper to compare the expected and actual values.
+			assert.Equal(t, actual, tt.want)
 		})
 	}
 }

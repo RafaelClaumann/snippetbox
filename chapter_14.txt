@@ -50,6 +50,7 @@ Chater 14 Testing
                             want: "17 Mar 2022 at 10:15",
                         },
                     }
+
                     for _, tt := range tests {
                         t.Run(tt.name, func(t *testing.T) {
                             hd := humanDate(tt.tm)
@@ -60,3 +61,51 @@ Chater 14 Testing
                         })
                     }
                 }
+
+        Helpers for test assertions
+
+            Serão escritas diversas asserções para os testes que serão variações deste padrão:
+
+                if actualValue != expectedValue {
+                    t.Errorf("got %v; want %v", actualValue, expectedValue)
+                }
+
+            Será feita uma abstração deste código em uma helper function.
+            Criar o arquivo internal/assert/assert.go.
+
+                func Equal[T comparable](t *testing.T, actual, expected T) {
+                    // Helper marks the calling function as a test helper function.
+                    t.Helper()
+
+                    if actual != expected {
+                        t.Errorf("got: %v; want: %v", actual, expected)
+                    }
+                }
+
+                A chamada t.Helper() indica para o test runner do Go que Equal() é um helper dos testes.
+                Isso significa que quando t.Errorf() for invocado dentro de Equal() o test runner vai
+                reportar o nome do arquivo e a linha do código que invocou Equal() na saída.
+
+            O uso de generics em Equal() torna possível usa-lo independente do tipo que expected e actual são.
+            Desde que expected e actual sejam do mesmo tipo.
+        
+        Additional Information
+
+            Sub-tests without a table of test case
+                
+                É importante ressaltar que você não precisa usar subtestes em conjunto com table-driven-tests.
+                É comletamente válido executar sub-tests invocando t.Run().
+
+                    func TestExample(t *testing.T) {
+                        t.Run("Example sub-test 1", func(t *testing.T) {
+                            // Do a test.
+                        })
+
+                        t.Run("Example sub-test 2", func(t *testing.T) {
+                            // Do another test.
+                        })
+
+                        t.Run("Example sub-test 3", func(t *testing.T) {
+                            // And another...
+                        })
+                    }
