@@ -1,0 +1,143 @@
+Chapter 12 Using request context
+
+    Até o momento, a autenticação de usuários é feita verificando se "authenticatedUserID"
+    está presente nos dados da sessão.
+
+        func (app *application) isAuthenticated(r *http.Request) bool {
+            return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+        }
+
+    É possivel tornar essa lógica mais robusta realizando uma consulta no banco de dados
+    para garantir que "authenticatedUserID" existe e é valido(o usuário pode ter sido excluído
+    do banco de dados mas sua sessão ainda existe).
+
+    Isso gera um problema adicional(performance) ja que é preciso realizar essa verificação no banco de dados.
+
+    O helper isAuthenticated() pode ser invocado multiplas vezes em cada ciclo de requisição.
+    Atualmente, isso é feito duas vezes.
+        1 - no middleware requireAuthentication()
+        2 - no helper newTemplateData()
+
+    Realizar consultas no helper isAuthenticated() acaba gerando acessos duplicados ao banco de dados
+    para cada requisição e isso não é nada eficiente.
+    
+    Uma abordagem mais eficiente seria realizar essa verificação em um middleware capaz de determinar
+    se a requisição atual é de um usuário autenticado e encaminhar essa informação para os handlers subsequentes.
+
+    Este resultado pode ser alcançado com Request Context.
+
+
+    12.1 How request context works
+
+        Todo http.Request que os middlewares e handlers lidam contém um context.Context embbeded que pode armazenar
+        informações durante o ciclo de vida(lifetime) da request.
+
+        Usar essa estratégia para verificar se o usuário está autenticado em um middleware e
+        disponibilizar essa informação para todos os outros middlewares.
+
+        The request context syntax
+
+            Adicionar informações ao contexto da requisição:
+
+                // Where r is a *http.Request...
+                ctx := r.Context()
+                ctx = context.WithValue(ctx, "isAuthenticated", true)
+                r = r.WithContext(ctx)
+
+                // Context returns the request's context. To change the context, use [Request.Clone] or [Request.WithContext].
+                r.Context()
+
+                // WithValue returns a copy of parent in which the value associated with key is val.
+                context.WithValue()
+
+                // WithContext returns a shallow copy of r with its context changed to ctx. The provided ctx must be non-nil
+                r.WithContext()
+
+                - r.Context() para recuperar o contexto da requisição
+                - context.WithValue() para criar uma nova cópia o contexto existente contendo a chave "isAuthenticated"
+                - r.WithContext() para criar uma cópia da requisição contendo o novo contexto
+            
+            Recuperar informações do contexto:
+
+                isAuthenticated, ok := r.Context().Value("isAuthenticated").(bool)
+                if !ok {
+                    return errors.New("could not convert value to bool")
+                }
+
+        Avoiding key collisions
+
+            Nos exemplos anteriores a string "isAuthenticated" foi usada para armazenar e recuperar informações do contexto, mas
+            isso não é recomendado porque existe o risco de outros pacotes usarem a mesma chave para adicionar informações no contexto.
+
+            É recomendado criar tipos personalizados para serem usados como chave:
+
+                // Declare a custom "contextKey" type for your context keys.
+                type contextKey string
+
+                // Create a constant with the type contextKey that we can use.
+                const isAuthenticatedContextKey = contextKey("isAuthenticated")
+
+                ...
+
+                // Set the value in the request context, using our isAuthenticatedContextKey 
+                // constant as the key.
+                ctx := r.Context()
+                ctx = context.WithValue(ctx, isAuthenticatedContextKey, true)
+                r = r.WithContext(ctx)
+
+                ...
+
+                // Retrieve the value from the request context using our constant as the key.
+                isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+                if !ok {
+                    return errors.New("could not convert value to bool")
+                }
+    
+    12.2 Request context for authentication/authorization
+
+        Atualizar o método UserModel.Exists() em users.go para retornar true quando um id
+        especifico existir na tabela users e falso em outros casos.
+
+            SELECT EXISTS(SELECT true FROM users WHERE id = ?);
+                - SELECT true is used inside the subquery to indicate that if any row matches the WHERE condition,
+                  the subquery should return a row.
+                - The EXISTS keyword checks whether the subquery returns any rows. It does not matter what is being selected.
+            
+            SELECT EXISTS(SELECT 1 FROM users WHERE id = 123);
+                - SELECT 1 inside the subquery: 1 is a constant value.
+                  It just means "return a row with this value" if the condition is met.
+                - FROM users WHERE id = ?: This specifies the condition to check.
+                - EXISTS: This checks if the subquery returns any rows.
+            
+            When you use SELECT EXISTS(...), the result is a single column of type integer in SQL (0 or 1).
+            When you call Scan on a variable of type *bool, the database/sql package converts 0 to false
+            and 1 to true based on Go's handling of boolean values.
+
+        Criar o arquivo cmd/web/context.go para definir o tipo contextKey que será adicionado ao context.
+
+            package main
+            type contextKey string
+            const isAuthenticatedContextKey = contextKey("isAuthenticated")
+        
+        Criar o middleware authenticate().
+            1. obtem o ID do usuário dos dados da sessão
+            2. verifica se o ID obtido da sessão corresponde a um usuário válido usando UserModel.Exists()
+            3. atualiza o contexto incluindo isAuthenticatedContextKey com valor true
+
+        Atualizar o helper isAuthenticated() para que ele passe a verificar o contexto ao invés da sessão.
+
+            // antes
+            func (app *application) isAuthenticated(r *http.Request) bool {
+                return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+            }
+
+            // depois
+            func (app *application) isAuthenticated(r *http.Request) bool {
+                isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+                if !ok {
+                    return false
+                }
+
+                return isAuthenticated
+            }
+
