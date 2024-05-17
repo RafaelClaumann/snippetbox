@@ -129,3 +129,13 @@ Chater 14 Testing
             When called, t.Fatal() will mark the test as failed, log the error, and then completely stop
             execution of the current test (or sub-test).
             You should call t.Fatal() in situations where it doesn’t make sense to continue the current test.
+
+    14.3 Testing middleware
+
+        É possível usar o mesmo padrão par testar middlewares.
+        Isso será demonstrado através de um teste para o middleware secureHeaders().
+        Será verificado que:
+            - secureHeaders() definiu todos os headers esperados
+            - secureHeaders() chamou corretamente o próximo middleware
+        
+        Criar o arquivo cmd/web/middleware_test.go.
