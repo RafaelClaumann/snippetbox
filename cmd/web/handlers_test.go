@@ -77,3 +77,14 @@ func TestHealthHandlerEE(t *testing.T) {
 
 	assert.Equal(t, string(body), "OK")
 }
+
+func TestHealthHandlerEEWithHelpers(t *testing.T) {
+	app := newTestApplication(t)
+	server := newTestServer(t, app.routes())
+	defer server.Close()
+
+	code, _, body := server.get(t, "/health")
+
+	assert.Equal(t, code, http.StatusOK)
+	assert.Equal(t, body, "OK")
+}

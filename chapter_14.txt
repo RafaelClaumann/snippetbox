@@ -165,3 +165,11 @@ Chater 14 Testing
             - Apenas errorLog e infoLog foram definidos mo mock de app.
                 Isso acontece porque os loggers são necessarios nos middlewares logRequest e recoverPanic
                 e esses middlewares são usados em todas as rotas.
+            
+        Using test helpers
+
+            Não existem regras rígidas sobre onde colocar helper methods para testes.
+            Se o helper for usado apenas em um arquivo *_test.go específico, provavelmente fará sentido incluí-lo inline nesse arquivo.
+            Se for usar um helper em testes de vários pacotes, talvez deva colocá-lo em um pacote reutilizável internal/testutils.
+
+            Criar o arquivo cmd/web/testutils_test.go.
