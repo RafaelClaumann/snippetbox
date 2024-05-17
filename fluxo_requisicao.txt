@@ -1,0 +1,59 @@
+
+POST /user/login
+
+    app.recoverPanic
+    app.logRequest
+    secureHeaders
+    sessionManager.LoadAndSave
+    noSurf
+    app.authenticate
+        - não vai encontrar authenticatedUserID na sessão
+          vai encaminhar a requisiçãodd para o próximo middleware
+
+    handlers.userLoginPost()
+        - obtem os dados do formulário
+        - valida os dados do formulário
+        - autentica usando users.Authenticate() com email e senha
+        - renova o token da sessão
+        - adiciona "authenticatedUserID" na sessão
+        - redireciona para '/snippet/create'
+
+    
+    GET '/snippet/create'
+
+        app.recoverPanic
+        app.logRequest
+        secureHeaders
+        sessionManager.LoadAndSave
+        noSurf
+        app.authenticate
+            -  vai encontrar authenticatedUserID na sessão
+            -  verifica se o usuário realmente existe no BD
+            -  adiciona isAuthenticatedContextKey com valor true no context
+            -  encaminha para o próximo middleware
+        
+        requireAuthentication
+            - invoca isAuthenticated()
+                - vai encontrar por isAuthenticatedContextKey no context
+            - adiciona header Cache-Control
+            - encaminha para o próximo middleware
+
+        app.snippetCreatePost()
+            - cria um snippet
+
+
+GET '/snippet/create'
+
+    app.recoverPanic
+    app.logRequest
+    secureHeaders
+    sessionManager.LoadAndSave
+    noSurf
+    app.authenticate
+        -  nao vai encontrar authenticatedUserID na sessão
+        -  encaminha para o próximo middleware
+
+    requireAuthentication
+        - invoca isAuthenticated()
+            - nao vai encontrar isAuthenticatedContextKey no context
+        - vai ser redirecionado para /user/login
