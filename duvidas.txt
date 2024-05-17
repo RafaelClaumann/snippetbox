@@ -1,0 +1,49 @@
+####
+#### 1
+#### 14.2 Testing HTTP handlers and middleware
+####
+    Seja esse o handler health:
+        func health(w http.ResponseWriter, r *http.Request) { }
+
+    Essa chamada funciona(1):
+        var rw *httptest.ResponseRecorder = &httptest.ResponseRecorder{}
+        health(rw, nil)
+    
+    Essa chamada não funciona(2):
+        var rw1 httptest.ResponseRecorder = httptest.ResponseRecorder{}
+        health(rw1, nil)
+
+    Porque isso acontece se health() nao espera que ResponseWritter seja um ponteiro?
+
+        - A interface http.ResponseWriter define os métodos que um tipo deve implementar
+            para ser considerado um ResponseWriter.
+
+        - *httptest.ResponseRecorder (ponteiro) implementa http.ResponseWriter,
+            permitindo que ele seja usado onde http.ResponseWriter é esperado.
+        
+        - httptest.ResponseRecorder (valor) não implementa http.ResponseWriter,
+            causando um erro de compilação se usado diretamente.
+        
+        - Use httptest.NewRecorder() para criar um ResponseRecorder corretamente inicializado que funciona como esperado.
+
+        type ResponseWriter interface {
+            Header() Header
+            Write([]byte) (int, error)
+            WriteHeader(statusCode int)
+        }
+
+        type ResponseRecorder struct {}
+        func (rw *ResponseRecorder) Header() http.Header { }
+        func (rw *ResponseRecorder) writeHeader(b []byte, str string) { }
+        func (rw *ResponseRecorder) Write(buf []byte) (int, error) { }
+
+        Para que a segunda chamada também funcionasse, ResponseRecorder teria que ser assim:
+
+            type ResponseRecorder struct {}
+            func (rw *ResponseRecorder) Header() http.Header { }
+            func (rw *ResponseRecorder) writeHeader(b []byte, str string) { }
+            func (rw *ResponseRecorder) Write(buf []byte) (int, error) { }
+            
+            func (rw ResponseRecorder) Header() http.Header { }
+            func (rw ResponseRecorder) writeHeader(b []byte, str string) { }
+            func (rw ResponseRecorder) Write(buf []byte) (int, error) { }

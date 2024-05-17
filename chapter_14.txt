@@ -109,3 +109,33 @@ Chater 14 Testing
                             // And another...
                         })
                     }
+    
+    14.2 Testing HTTP handlers and middleware
+
+            Os handlers escritos até agora são complexos de testar e por este motivo
+            um handler mais simples, chamado health(), será criado para estudo dos testes.
+
+            Esse handler simplesmente vai retornar 200 para o usuário e uma string "OK" no ResponseBody.
+
+        Recording responses
+
+            O Go fornece um pacote chamado net/http/httptest para auxiliar nos testes de handlers.
+            O tipo httptest.ResponseRecorder implementa a interface http.ResponseWriter e armazena
+            o StatusCode, Headers e ResponseBody ao invés de escreve-los na conexão HTTP.
+
+            Criar um objeto httptest.ResponseRecorder usando httptest.NewRecorder() e fornece-lo para o handler health()
+            como primeiro parâmetro.
+
+            When called, t.Fatal() will mark the test as failed, log the error, and then completely stop
+            execution of the current test (or sub-test).
+            You should call t.Fatal() in situations where it doesn’t make sense to continue the current test.
+
+    14.3 Testing middleware
+
+        É possível usar o mesmo padrão par testar middlewares.
+        Isso será demonstrado através de um teste para o middleware secureHeaders().
+        Será verificado que:
+            - secureHeaders() definiu todos os headers esperados
+            - secureHeaders() chamou corretamente o próximo middleware
+        
+        Criar o arquivo cmd/web/middleware_test.go.
