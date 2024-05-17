@@ -139,3 +139,29 @@ Chater 14 Testing
             - secureHeaders() chamou corretamente o próximo middleware
         
         Criar o arquivo cmd/web/middleware_test.go.
+
+    14.3 End-to-end testing
+
+        Entender como executar testes end-to-end.
+        Este tipo de teste abrange o roteamento, handlers e middlewares.
+        O teste end-to-end dá mais confiabilidade a aplicação em relação aos testes unitários.
+
+        Criar um novo teste TestHealthHandlerEE() em handlers_test.go.
+        O teste vai garantir que qualquer GET em /health realmente invoca o handler health().
+
+        Using httptest.Server
+
+            O ponto principal dos testes end-to-end é usar httptest.NewTLSServer() para iniciar
+            um http test server(httptest.Server) e receber requisições.
+
+        Detalhes a respeito do teste TestHealthHandlerEE().
+            - O handler fornecido na chamada a httptest.NewTLSServer() é invocado
+                toda vez que o servidor receber uma requisição HTTP.
+                No teste TestHealthHandlerEE(), ohandler fornecido foi o retorno de app.routes()
+                significando que o teste usará as rotas, middlewares e handlers reais da aplicação.
+            - Para testar HTTP ao invés de HTTPS, deve-se usar httptest.NewServer().
+            - O ts.Client() retorna um client do test server, do tipo http.Client.
+                Esse client deve ser usado para realizar requisições.
+            - Apenas errorLog e infoLog foram definidos mo mock de app.
+                Isso acontece porque os loggers são necessarios nos middlewares logRequest e recoverPanic
+                e esses middlewares são usados em todas as rotas.
