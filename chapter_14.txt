@@ -173,3 +173,15 @@ Chater 14 Testing
             Se for usar um helper em testes de vários pacotes, talvez deva colocá-lo em um pacote reutilizável internal/testutils.
 
             Criar o arquivo cmd/web/testutils_test.go.
+
+        Cookies and redirections
+
+            Até agora o test server client foi usado com as configurações default.
+            Serão feitas alterações nas configurações do test server client para que ele se encaixe melhor nos testes da aplicação.
+
+                - O client deve armazenar qualquer cookie enviado na resposta HTTP.
+                    Este cookie poderá ser incluído em requisições subsequentes, isso ajudara no teste de rotas com preoteção CSRF.
+                - Não é desejável que o test server client siga os redirects automaticamente.
+                    Em certas situações será preciso obter a primeira resposta HTTP enviada pelo servidor.
+            
+            Fazer essas alterações em testutils_test.go.
