@@ -81,4 +81,15 @@
         Portanto, embora o parâmetro t *testing.T não desempenhe um papel direto na funcionalidade de newTestApplication
         conforme está, sua presença na assinatura da função sugere que essa função deve ser usada no contexto de testes,
         e ela está alinhada com as convenções de teste do Go.
+    
+    O uso foi fez sentido agora:
+
+        func newTestApplication(t *testing.T) *application {
+            templateCache, err := newTemplateCache()
+            if err != nil {
+                t.Fatal(err)
+            }
+
+            ...
+        }
 }

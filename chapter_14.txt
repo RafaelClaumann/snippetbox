@@ -130,15 +130,15 @@ Chater 14 Testing
             execution of the current test (or sub-test).
             You should call t.Fatal() in situations where it doesn’t make sense to continue the current test.
 
-    14.3 Testing middleware
+        Testing middleware
 
-        É possível usar o mesmo padrão par testar middlewares.
-        Isso será demonstrado através de um teste para o middleware secureHeaders().
-        Será verificado que:
-            - secureHeaders() definiu todos os headers esperados
-            - secureHeaders() chamou corretamente o próximo middleware
-        
-        Criar o arquivo cmd/web/middleware_test.go.
+            É possível usar o mesmo padrão para testar middlewares.
+            Isso será demonstrado através de um teste para o middleware secureHeaders().
+            Será verificado que:
+                - secureHeaders() definiu todos os headers esperados
+                - secureHeaders() chamou corretamente o próximo middleware
+            
+            Criar o arquivo cmd/web/middleware_test.go.
 
     14.3 End-to-end testing
 
@@ -185,3 +185,95 @@ Chater 14 Testing
                     Em certas situações será preciso obter a primeira resposta HTTP enviada pelo servidor.
             
             Fazer essas alterações em testutils_test.go.
+    
+    14.4 Customizing how tests run
+
+        Controlling which tests are run
+            
+            O comando abaixo executa os testes de um package específico.
+                go test ./cmd/web
+            
+            É possível executar os tests de todos os package do projeto.
+                go test ./...
+            
+            Também dá para executar testes que deem match com a regex passada em -run.
+                go test -v -run="^TestPing$" ./cmd/web/
+            
+            É possível limitar mais ainda e executar um sub-test específico.
+                go test -v -run="^TestHumanDate$/^UTC$" ./cmd/web
+        
+        Test caching
+            Se executar o mesmo teste duas vezes seguidas, a segunda execução exibe os dados cacheados.
+            Para forçar uma execução total sem usar cache, use o comando abaixo:
+                go test -count=1 ./cmd/web 
+        
+        Fast failure
+            Sabendo que qualquer t.Errorf() dentro dos testes fará com que apenas aquele teste pare.
+            É possível fazer com que o go interrompa a execução de testes se acontecer t.Errorf().
+                go test -failfast ./cmd/web
+            Este comando só interrompe os testes do pacote que lançou a falha(t.Errorf()).
+    
+    14.5 Mocking dependencies
+
+            Escrever testes para o handler snippetView e rota GET /snippet/view/:id.
+            Neste projeto varias dependencias foram inseridas na struct application em main.go.
+            Durante os testes, faz sentido mockar algumas destas dependencias.
+
+                type application struct {
+                    errorLog       *log.Logger
+                    infoLog        *log.Logger
+                    snippets       *models.SnippetModel
+                    users          *models.UserModel
+                    templateCache  map[string]*template.Template
+                    formDecoder    *form.Decoder
+                    sessionManager *scs.SessionManager
+                }
+            
+            No capitulo anterior errorLog e infoLog foram mockados e passaram a escrever as saídas em
+            io.Discard ao invés de os.Stdout ou os.Stderr.
+            O io.Discard foi usado para não deixar a saída dos testes poluída.
+
+                func newTestApplication(t *testing.T) *application {
+                    return &application{
+                        errorLog: log.New(io.Discard, "", 0),
+                        infoLog:  log.New(io.Discard, "", 0),
+                    }
+                }
+            
+            O models.SnippetModel e models.UserModel também serão mockados para que seja possível testar
+            o comportamendo do handler snippetView sem precisar instanciar uma instancia de teste do MySQL.
+
+        Mocking the database models
+
+            Criar um novo pacote internal/models/mocks com os arquivo snippets.go and user.go que serão
+            usados para armazenar os mocks do database model.
+
+        Initializing the mocks
+
+            Atualizar a função newTestApplication() de testutils_test.go para que crie a application com todos os mocks.
+
+                func newTestApplication(t *testing.T) *application {
+                    templateCache, err := newTemplateCache()
+                    if err != nil { t.Fatal(err) }
+
+                    formDecoder := form.NewDecoder()
+
+                    sessionManager := scs.New()
+                    sessionManager.Lifetime = 12 * time.Hour
+                    sessionManager.Cookie.Secure = true
+
+                    return &application{
+                        errorLog:       log.New(io.Discard, "", 0),
+                        infoLog:        log.New(io.Discard, "", 0),
+                        snippets:       &mocks.SnippetModel{}, // Use the mock.
+                        users:          &mocks.UserModel{},    // Use the mock.
+                        templateCache:  templateCache,
+                        formDecoder:    formDecoder,
+                        sessionManager: sessionManager,
+                    }
+                }
+
+            Neste ponto, a aplicação acusará erro de compilação porque
+                - snippets espera models.SnippetModel e recebe mocks.SnippetModel
+                - users espera models.UserModel e recebe mocks.UserModel
+
