@@ -38,8 +38,8 @@ func newTestApplication(t *testing.T) *application {
 	return &application{
 		errorLog:       log.New(io.Discard, "", 0),
 		infoLog:        log.New(io.Discard, "", 0),
-		snippets:       &mocks.SnippetModel{}, // Use the mock, didnt compile cuz requires models.SnippetModel
-		users:          &mocks.UserModel{},    // Use the mock, didnt compile cuz requires models.UserModel
+		snippets:       &mocks.SnippetModel{}, // Use the mock
+		users:          &mocks.UserModel{},    // Use the mock
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,

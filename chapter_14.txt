@@ -277,3 +277,68 @@ Chater 14 Testing
                 - snippets espera models.SnippetModel e recebe mocks.SnippetModel
                 - users espera models.UserModel e recebe mocks.UserModel
 
+            A maneira idiomatica de resolver isso é criando uma inteface que seja satisfeita
+            por user/snippet mock e user/snippet de produção.
+
+            Criar a interface SnippetModelInterface em internal/models/snippets.go que descreva os métodos
+            que a struct SnippetModel possui.
+
+                type SnippetModelInterface interface {
+                    Insert(title string, content string, expires int) (int, error)
+                    Get(id int) (*Snippet, error)
+                    Latest() ([]*Snippet, error)
+                }
+            
+            Fazer o mesmo para UserModel.
+
+                type UserModelInterface interface {
+                    Insert(name, email, password string) error
+                    Authenticate(email, password string) (int, error)
+                    Exists(id int) (bool, error)
+                }
+            
+            Atualizar a struct application para que receba as interfaces ao invés do objeto concreto.
+
+                // ANTES
+                    type application struct {
+                        snippets    *models.SnippetModel
+                        users       *models.UserModel
+                    }
+
+                    SnippetModel
+                        func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {}
+                        func (m *SnippetModel) Get(id int) (*Snippet, error) {}
+                        func (m *SnippetModel) Latest() ([]*Snippet, error) {}
+
+                    UserModel
+                        func (m *UserModel) Insert(name, email, password string) error {}
+                        func (m *UserModel) Authenticate(email, password string) (int, error) {}
+                        func (m *UserModel) Exists(id int) (bool, error) {}
+
+                // DEPOIS
+                    type application struct {
+                        snippets    models.SnippetModelInterface
+                        users       models.UserModelInterface
+                    }
+
+                    type SnippetModelInterface interface {
+                        Insert(title string, content string, expires int) (int, error)
+                        Get(id int) (*Snippet, error)
+                        Latest() ([]*Snippet, error)
+                    }
+
+                    SnippetModel
+                        func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {}
+                        func (m *SnippetModel) Get(id int) (*Snippet, error) {}
+                        func (m *SnippetModel) Latest() ([]*Snippet, error) {}
+
+                    type UserModelInterface interface {
+                        Insert(name, email, password string) error
+                        Authenticate(email, password string) (int, error)
+                        Exists(id int) (bool, error)
+                    }
+
+                    UserModel
+                        func (m *UserModel) Insert(name, email, password string) error {}
+                        func (m *UserModel) Authenticate(email, password string) (int, error) {}
+                        func (m *UserModel) Exists(id int) (bool, error) {}
