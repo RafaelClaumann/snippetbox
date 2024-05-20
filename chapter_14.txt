@@ -130,12 +130,276 @@ Chater 14 Testing
             execution of the current test (or sub-test).
             You should call t.Fatal() in situations where it doesn’t make sense to continue the current test.
 
-    14.3 Testing middleware
+        Testing middleware
 
-        É possível usar o mesmo padrão par testar middlewares.
-        Isso será demonstrado através de um teste para o middleware secureHeaders().
-        Será verificado que:
-            - secureHeaders() definiu todos os headers esperados
-            - secureHeaders() chamou corretamente o próximo middleware
+            É possível usar o mesmo padrão para testar middlewares.
+            Isso será demonstrado através de um teste para o middleware secureHeaders().
+            Será verificado que:
+                - secureHeaders() definiu todos os headers esperados
+                - secureHeaders() chamou corretamente o próximo middleware
+            
+            Criar o arquivo cmd/web/middleware_test.go.
+
+    14.3 End-to-end testing
+
+        Entender como executar testes end-to-end.
+        Este tipo de teste abrange o roteamento, handlers e middlewares.
+        O teste end-to-end dá mais confiabilidade a aplicação em relação aos testes unitários.
+
+        Criar um novo teste TestHealthHandlerEE() em handlers_test.go.
+        O teste vai garantir que qualquer GET em /health realmente invoca o handler health().
+
+        Using httptest.Server
+
+            O ponto principal dos testes end-to-end é usar httptest.NewTLSServer() para iniciar
+            um http test server(httptest.Server) e receber requisições.
+
+        Detalhes a respeito do teste TestHealthHandlerEE().
+            - O handler fornecido na chamada a httptest.NewTLSServer() é invocado
+                toda vez que o servidor receber uma requisição HTTP.
+                No teste TestHealthHandlerEE(), ohandler fornecido foi o retorno de app.routes()
+                significando que o teste usará as rotas, middlewares e handlers reais da aplicação.
+            - Para testar HTTP ao invés de HTTPS, deve-se usar httptest.NewServer().
+            - O ts.Client() retorna um client do test server, do tipo http.Client.
+                Esse client deve ser usado para realizar requisições.
+            - Apenas errorLog e infoLog foram definidos mo mock de app.
+                Isso acontece porque os loggers são necessarios nos middlewares logRequest e recoverPanic
+                e esses middlewares são usados em todas as rotas.
+            
+        Using test helpers
+
+            Não existem regras rígidas sobre onde colocar helper methods para testes.
+            Se o helper for usado apenas em um arquivo *_test.go específico, provavelmente fará sentido incluí-lo inline nesse arquivo.
+            Se for usar um helper em testes de vários pacotes, talvez deva colocá-lo em um pacote reutilizável internal/testutils.
+
+            Criar o arquivo cmd/web/testutils_test.go.
+
+        Cookies and redirections
+
+            Até agora o test server client foi usado com as configurações default.
+            Serão feitas alterações nas configurações do test server client para que ele se encaixe melhor nos testes da aplicação.
+
+                - O client deve armazenar qualquer cookie enviado na resposta HTTP.
+                    Este cookie poderá ser incluído em requisições subsequentes, isso ajudara no teste de rotas com preoteção CSRF.
+                - Não é desejável que o test server client siga os redirects automaticamente.
+                    Em certas situações será preciso obter a primeira resposta HTTP enviada pelo servidor.
+            
+            Fazer essas alterações em testutils_test.go.
+    
+    14.4 Customizing how tests run
+
+        Controlling which tests are run
+            
+            O comando abaixo executa os testes de um package específico.
+                go test ./cmd/web
+            
+            É possível executar os tests de todos os package do projeto.
+                go test ./...
+            
+            Também dá para executar testes que deem match com a regex passada em -run.
+                go test -v -run="^TestPing$" ./cmd/web/
+            
+            É possível limitar mais ainda e executar um sub-test específico.
+                go test -v -run="^TestHumanDate$/^UTC$" ./cmd/web
         
-        Criar o arquivo cmd/web/middleware_test.go.
+        Test caching
+            Se executar o mesmo teste duas vezes seguidas, a segunda execução exibe os dados cacheados.
+            Para forçar uma execução total sem usar cache, use o comando abaixo:
+                go test -count=1 ./cmd/web 
+        
+        Fast failure
+            Sabendo que qualquer t.Errorf() dentro dos testes fará com que apenas aquele teste pare.
+            É possível fazer com que o go interrompa a execução de testes se acontecer t.Errorf().
+                go test -failfast ./cmd/web
+            Este comando só interrompe os testes do pacote que lançou a falha(t.Errorf()).
+    
+    14.5 Mocking dependencies
+
+            Escrever testes para o handler snippetView e rota GET /snippet/view/:id.
+            Neste projeto varias dependencias foram inseridas na struct application em main.go.
+            Durante os testes, faz sentido mockar algumas destas dependencias.
+
+                type application struct {
+                    errorLog       *log.Logger
+                    infoLog        *log.Logger
+                    snippets       *models.SnippetModel
+                    users          *models.UserModel
+                    templateCache  map[string]*template.Template
+                    formDecoder    *form.Decoder
+                    sessionManager *scs.SessionManager
+                }
+            
+            No capitulo anterior errorLog e infoLog foram mockados e passaram a escrever as saídas em
+            io.Discard ao invés de os.Stdout ou os.Stderr.
+            O io.Discard foi usado para não deixar a saída dos testes poluída.
+
+                func newTestApplication(t *testing.T) *application {
+                    return &application{
+                        errorLog: log.New(io.Discard, "", 0),
+                        infoLog:  log.New(io.Discard, "", 0),
+                    }
+                }
+            
+            O models.SnippetModel e models.UserModel também serão mockados para que seja possível testar
+            o comportamendo do handler snippetView sem precisar instanciar uma instancia de teste do MySQL.
+
+        Mocking the database models
+
+            Criar um novo pacote internal/models/mocks com os arquivo snippets.go and user.go que serão
+            usados para armazenar os mocks do database model.
+
+        Initializing the mocks
+
+            Atualizar a função newTestApplication() de testutils_test.go para que crie a application com todos os mocks.
+
+                func newTestApplication(t *testing.T) *application {
+                    templateCache, err := newTemplateCache()
+                    if err != nil { t.Fatal(err) }
+
+                    formDecoder := form.NewDecoder()
+
+                    sessionManager := scs.New()
+                    sessionManager.Lifetime = 12 * time.Hour
+                    sessionManager.Cookie.Secure = true
+
+                    return &application{
+                        errorLog:       log.New(io.Discard, "", 0),
+                        infoLog:        log.New(io.Discard, "", 0),
+                        snippets:       &mocks.SnippetModel{}, // Use the mock.
+                        users:          &mocks.UserModel{},    // Use the mock.
+                        templateCache:  templateCache,
+                        formDecoder:    formDecoder,
+                        sessionManager: sessionManager,
+                    }
+                }
+
+            Neste ponto, a aplicação acusará erro de compilação porque
+                - snippets espera models.SnippetModel e recebe mocks.SnippetModel
+                - users espera models.UserModel e recebe mocks.UserModel
+
+            A maneira idiomatica de resolver isso é criando uma inteface que seja satisfeita
+            por user/snippet mock e user/snippet de produção.
+
+            Criar a interface SnippetModelInterface em internal/models/snippets.go que descreva os métodos
+            que a struct SnippetModel possui.
+
+                type SnippetModelInterface interface {
+                    Insert(title string, content string, expires int) (int, error)
+                    Get(id int) (*Snippet, error)
+                    Latest() ([]*Snippet, error)
+                }
+            
+            Fazer o mesmo para UserModel.
+
+                type UserModelInterface interface {
+                    Insert(name, email, password string) error
+                    Authenticate(email, password string) (int, error)
+                    Exists(id int) (bool, error)
+                }
+            
+            Atualizar a struct application para que receba as interfaces ao invés do objeto concreto.
+
+                // ANTES
+                    type application struct {
+                        snippets    *models.SnippetModel
+                        users       *models.UserModel
+                    }
+
+                    SnippetModel
+                        func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {}
+                        func (m *SnippetModel) Get(id int) (*Snippet, error) {}
+                        func (m *SnippetModel) Latest() ([]*Snippet, error) {}
+
+                    UserModel
+                        func (m *UserModel) Insert(name, email, password string) error {}
+                        func (m *UserModel) Authenticate(email, password string) (int, error) {}
+                        func (m *UserModel) Exists(id int) (bool, error) {}
+
+                // DEPOIS
+                    type application struct {
+                        snippets    models.SnippetModelInterface
+                        users       models.UserModelInterface
+                    }
+
+                    type SnippetModelInterface interface {
+                        Insert(title string, content string, expires int) (int, error)
+                        Get(id int) (*Snippet, error)
+                        Latest() ([]*Snippet, error)
+                    }
+
+                    SnippetModel
+                        func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {}
+                        func (m *SnippetModel) Get(id int) (*Snippet, error) {}
+                        func (m *SnippetModel) Latest() ([]*Snippet, error) {}
+
+                    type UserModelInterface interface {
+                        Insert(name, email, password string) error
+                        Authenticate(email, password string) (int, error)
+                        Exists(id int) (bool, error)
+                    }
+
+                    UserModel
+                        func (m *UserModel) Insert(name, email, password string) error {}
+                        func (m *UserModel) Authenticate(email, password string) (int, error) {}
+                        func (m *UserModel) Exists(id int) (bool, error) {}
+        
+        Testing the snippetView handler
+
+            Com o setup de mocks pronto é possível escrever testes end-to-end para o snippetView handler.
+            
+            Como parte deste teste, o código do handler snippetView irá chamar o método mock.SnippetModel.Get().
+            Isso acontece porque o campo snippets de application aceita uma interface do tipo SnippetModelInterface.
+            Essa interface é implementada por mocks.UserModel e models.UserModel e isto significa que, ambas structs
+            podem ser atribuidas ao campo snippets de application.
+            A "instância" de application usada no teste é criada em testutils_test.go e recebe mocks.SnippetModel
+            no campo snippets e, seguindo a mesma lógica, mocks.UserModel é atribuido ao campo users.
+
+            main.go
+                type application struct {
+                    errorLog       *log.Logger
+                    infoLog        *log.Logger
+                    snippets       models.SnippetModelInterface
+                    users          models.UserModelInterface
+                    templateCache  map[string]*template.Template
+                    formDecoder    *form.Decoder
+                    sessionManager *scs.SessionManager
+                }
+
+            testutils_test.go -> newTestApplication()
+            	return &application{
+                    errorLog:       log.New(io.Discard, "", 0),
+                    infoLog:        log.New(io.Discard, "", 0),
+                    snippets:       &mocks.SnippetModel{}, // Use the mock
+                    users:          &mocks.UserModel{},    // Use the mock
+                    templateCache:  templateCache,
+                    formDecoder:    formDecoder,
+                    sessionManager: sessionManager,
+                }
+            
+            Vale lembrar que os retornos de mocks.Snippet.Get() são:
+                
+                func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
+                    switch id {
+                    case 1:
+                        return mockSnippet, nil
+                    default:
+                        return nil, models.ErrNoRecord
+                    }
+                }
+            
+            O objetivo deste teste é
+                - para requisição GET /snippet/view/1 o resultado deve ser 200 com o devido snippet mockado no ResponseBody
+                - para requisição GET /snippet/view/* o resultado deve ser 404 Not Found
+            
+            Criar uma função chamada StringContains() em internal/assert e usa-la para verificar se o RequestBody contém um valor especifico.
+
+                func StringContains(t *testing.T, actual, expectedSubstring string) {
+                    t.Helper()
+
+                    if !strings.Contains(actual, expectedSubstring) {
+                        t.Errorf("got: %q; expected to contain: %q", actual, expectedSubstring)
+                    }
+                }
+            
+            Criar o teste em cmd/web/handlers_test.go.
+            
