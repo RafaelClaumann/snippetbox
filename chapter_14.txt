@@ -342,3 +342,64 @@ Chater 14 Testing
                         func (m *UserModel) Insert(name, email, password string) error {}
                         func (m *UserModel) Authenticate(email, password string) (int, error) {}
                         func (m *UserModel) Exists(id int) (bool, error) {}
+        
+        Testing the snippetView handler
+
+            Com o setup de mocks pronto é possível escrever testes end-to-end para o snippetView handler.
+            
+            Como parte deste teste, o código do handler snippetView irá chamar o método mock.SnippetModel.Get().
+            Isso acontece porque o campo snippets de application aceita uma interface do tipo SnippetModelInterface.
+            Essa interface é implementada por mocks.UserModel e models.UserModel e isto significa que, ambas structs
+            podem ser atribuidas ao campo snippets de application.
+            A "instância" de application usada no teste é criada em testutils_test.go e recebe mocks.SnippetModel
+            no campo snippets e, seguindo a mesma lógica, mocks.UserModel é atribuido ao campo users.
+
+            main.go
+                type application struct {
+                    errorLog       *log.Logger
+                    infoLog        *log.Logger
+                    snippets       models.SnippetModelInterface
+                    users          models.UserModelInterface
+                    templateCache  map[string]*template.Template
+                    formDecoder    *form.Decoder
+                    sessionManager *scs.SessionManager
+                }
+
+            testutils_test.go -> newTestApplication()
+            	return &application{
+                    errorLog:       log.New(io.Discard, "", 0),
+                    infoLog:        log.New(io.Discard, "", 0),
+                    snippets:       &mocks.SnippetModel{}, // Use the mock
+                    users:          &mocks.UserModel{},    // Use the mock
+                    templateCache:  templateCache,
+                    formDecoder:    formDecoder,
+                    sessionManager: sessionManager,
+                }
+            
+            Vale lembrar que os retornos de mocks.Snippet.Get() são:
+                
+                func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
+                    switch id {
+                    case 1:
+                        return mockSnippet, nil
+                    default:
+                        return nil, models.ErrNoRecord
+                    }
+                }
+            
+            O objetivo deste teste é
+                - para requisição GET /snippet/view/1 o resultado deve ser 200 com o devido snippet mockado no ResponseBody
+                - para requisição GET /snippet/view/* o resultado deve ser 404 Not Found
+            
+            Criar uma função chamada StringContains() em internal/assert e usa-la para verificar se o RequestBody contém um valor especifico.
+
+                func StringContains(t *testing.T, actual, expectedSubstring string) {
+                    t.Helper()
+
+                    if !strings.Contains(actual, expectedSubstring) {
+                        t.Errorf("got: %q; expected to contain: %q", actual, expectedSubstring)
+                    }
+                }
+            
+            Criar o teste em cmd/web/handlers_test.go.
+            
