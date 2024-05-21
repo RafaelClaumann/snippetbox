@@ -403,3 +403,114 @@ Chater 14 Testing
             
             Criar o teste em cmd/web/handlers_test.go.
             
+    14.6 Testing HTML forms
+
+        Relembrando Capítulo 11.7 CSRF Protection
+
+            Token-based mitigation
+                O pacote justinas/nosurf usa o padrão 'double-submit cookie' para prevenir ataques CSRF.
+                Neste padrão um token CSRF aleatório é gerado e enviado para o usuário no CSRF Cookie.
+                O token também é adicionado a um campo oculto em cada formulário vulnerável.
+                Quando o formulário é submetido justinas/nosurf verifica se o token CSRF do campo oculto corresponde ao CSRF Cookie.
+
+                cmd/web/middleware.go
+                    // Create a NoSurf middleware function which uses a customized CSRF cookie with
+                    // the Secure, Path and HttpOnly attributes set.
+                    func noSurf(next http.Handler) http.Handler {
+                        csrfHandler := nosurf.New(next)
+                        csrfHandler.SetBaseCookie(http.Cookie{
+                            HttpOnly: true,
+                            Path:     "/",
+                            Secure:   true,
+                        })
+
+                        return csrfHandler
+                    }
+
+                cmd/web/routes.go
+                    // Use the nosurf middleware on all our 'dynamic' routes.
+                    dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
+
+                cmd/web/templates.go
+                    // Add a CSRFToken field.
+                    type templateData struct {
+                        CSRFToken       string
+                    }
+
+                cmd/web/helpers.go
+                    // Add the CSRF token.
+                    func (app *application) newTemplateData(r *http.Request) *templateData {
+                        return &templateData{
+                            CSRFToken:       nosurf.Token(r), 
+                        }
+                    }
+
+                ui/html/pages/create.tmpl
+                    // Include the CSRF token form
+                    <form action='/snippet/create' method='POST'>
+                        <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+                    </form>
+
+                https://reflectoring.io/images/posts/csrf/csrf-token-synchronizer_hu417751a3bd63fc7d73ad84e48fdb0183_39163_639x0_resize_box_3.png
+
+                  Usuário                              Servidor
+                    |                                    |
+                    |-------- GET /signup -------------->|  (1. Usuário solicita a página de signup)
+                    |                                    |
+                    |<----------- 200 OK ----------------|  (2. Servidor responde com a página de signup)
+                    |                                    |
+                    |-------- POST /signup ------------->|  (3. Usuário envia credenciais de signup)
+                    |    (username, password)            |
+                    |                                    |
+                    |<------ Verifica credenciais -------|  (4. Servidor verifica as credenciais)
+                    |                                    |
+                    |<----------- 200 OK ----------------|  (5. Credenciais válidas, servidor responde)
+                    |                                    |
+                    |<----- Set-Cookie: sessionID ------>|  (6. Servidor define o cookie de sessão)
+                    |<----- Set-Cookie: csrfToken ------>|  (7. Servidor gera e define o cookie CSRF)
+                    |                                    | 
+                    |                                    |
+                    |---- Faz uma requisição POST ------>|  (8. Usuário faz uma nova requisição POST)
+                    |    (body contém csrfToken)         |  (   incluindo o token CSRF no corpo)
+                    |                                    |
+                    |<----- Verifica csrfToken ----------|  (9. Servidor verifica se o token CSRF no corpo)
+                    |                                    |  (   da requisição corresponde ao cookie CSRF)
+                    |<------------ 200 OK ---------------|  (10. Se o token for válido, o servidor responde)
+                    |                                    |
+
+        Criar um teste end-to-end para a rota POST /user/signup que é processada por userSignupPost handler.
+        O teste nesta rota é um pouco complicado devido a validação anti-CSRF.
+        Qualquer requisição realizada em POST /user/signup vai receber 400 Bad Request se não fornecer um
+        token CSRF e cookie CSRF válidos.
+
+        É preciso recriar o workflow da "vida real":
+
+            1 - Relizar um GET /user/signup request.
+                Essa rota retornará um CSRF Cookie nos headers e o CSRF Token no response body.
+
+            2 - Extrair o CSRF token do ResponseBody HTML.
+
+            3 - Realizar POST /user/signup usando o mesmo http.Client do primeiro passo, desta forma
+                o CSRF Cookie será encaminhado automaticamente.
+                Além disso, antes de realizar o POST, é preciso incluir o token CSRF nos dados da requisição.
+            
+
+            Relembrando capitulo 14.3 End-to-end testing
+
+                Cookies and redirections
+
+                    Até agora o test server client foi usado com as configurações default.
+                    Serão feitas alterações nas configurações do test server client para que ele se
+                    encaixe melhor nos testes da aplicação.
+
+                    - O client deve armazenar qualquer cookie recebido na resposta HTTP.
+                        Este cookie poderá ser incluído em requisições subsequentes, isso ajudara a testar rotas com preoteção CSRF.
+                    - Não é desejável que o test server client siga os redirects automaticamente.
+                        Em certas situações será preciso obter a primeira resposta HTTP enviada pelo servidor.
+                    
+                    Fazer essas alterações em testutils_test.go.
+                        https://github.com/RafaelClaumann/snippetbox/pull/11/commits/90554beed62d7275a58f07862e0fa9a81a834a82
+
+        Criar uma nova função chamada extractCSRFToken em cmd/web/testutils_test.go.
+        Criar uma nova função chamada postForm em cmd/web/testutils_test.go.
+        Criar o teste end-to-end TestUserSignup em handlers_test.go.
