@@ -564,3 +564,36 @@ Chater 14 Testing
                 }
             
             Criar o teste TestUserModelExists no novo arquivo internal/models/users_test.go.
+    
+        Skipping long-running tests
+
+            É possível ignorar testes usando flags de linha de comando.
+            Uma maneira idiomatica de fazer isso é através da função testing.Short().
+            A função verifica se a flag -short foi fornecida ou não.
+            Quando -short é fornecido a função t.Skip() é chamada para pular o teste.
+
+                // Skip the test if the "-short" flag is provided when running the test.
+                if testing.Short() {
+                    t.Skip("models: skipping integration test")
+                }
+            
+                // executa todos os testes
+                go test -v ./...
+                    === RUN   TestUserModelExists
+                    === RUN   TestUserModelExists/Valid_ID
+                    === RUN   TestUserModelExists/Zero_ID
+                    === RUN   TestUserModelExists/Non-existent_ID
+                    --- PASS: TestUserModelExists (0.14s)
+                        --- PASS: TestUserModelExists/Valid_ID (0.06s)
+                        --- PASS: TestUserModelExists/Zero_ID (0.04s)
+                        --- PASS: TestUserModelExists/Non-existent_ID (0.05s)
+                    PASS
+                    ok      snippetbox.claumann.net/internal/models 0.148s
+
+                // pula o teste TestUserModelExists(t *testing.T).
+                go test -v -short ./...
+                    === RUN   TestUserModelExists
+                        users_test.go:12: models: skipping integration test
+                    --- SKIP: TestUserModelExists (0.00s)
+                    PASS
+                    ok      snippetbox.claumann.net/internal/models 0.004s
