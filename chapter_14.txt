@@ -540,3 +540,9 @@ Chater 14 Testing
                 Isso garante que o banco de dados de teste sempre estará no mesmo estado quando o teste for iniciado.
 
                 Criar os script setup.sql e teardown.sql em internal/models/testdata.
+
+            Criar o helper newTestDB() em internal/models/testutils_test.go.
+            O que newTestDB() faz:
+                - Cria uma novo connection pool(*sql.DB) para os testes
+                - Executa setup.sql
+                - Registra uma função 'Cleanup' que executará o teardown.sql e db.Close() quando o teste terminar
