@@ -597,3 +597,26 @@ Chater 14 Testing
                     --- SKIP: TestUserModelExists (0.00s)
                     PASS
                     ok      snippetbox.claumann.net/internal/models 0.004s
+
+    14.7 Profiling test coverage
+
+        É possível gerar métricas de coverge usando a ferramenta de testes do Go.
+
+            go test -cover ./...
+
+                snippetbox.claumann.net/internal/validator      coverage: 0.0%  of statements
+                snippetbox.claumann.net/internal/assert         coverage: 0.0%  of statements
+                snippetbox.claumann.net/internal/models/mocks   coverage: 0.0%  of statements
+                snippetbox.claumann.net/cmd/web 0.043s          coverage: 47.4% of statements
+                snippetbox.claumann.net/internal/models 0.175s  coverage: 11.6% of statements
+        
+        Para obter uma análise mais detalhada da cobertura de testes usa-se a flag -coverprofile=<path_to_file>.
+        Se os testes forem executados com sucesso o arquivo de coverage profile será escrito em <path_to_file>.
+
+            go test -coverprofile=/tmp/profile.out ./...
+            go tool cover -func=/tmp/profile.out
+        
+        Uma alternativa mais visual é usar a flag html.
+        Isto vai abrir um browser com as informações de coverage.
+
+            go tool cover -html=/tmp/profile.out
