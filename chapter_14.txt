@@ -514,3 +514,86 @@ Chater 14 Testing
         Criar uma nova função chamada extractCSRFToken em cmd/web/testutils_test.go.
         Criar uma nova função chamada postForm em cmd/web/testutils_test.go.
         Criar o teste end-to-end TestUserSignup em handlers_test.go.
+    
+    14.7 Integration testing
+
+        É possível aumentar ainda mais a confiabilidade da aplicação ao garantir que user e snippet models
+        funcionam como esperado.
+        Os testes são realizados em um MySQL de testes que imita o banco de dados de produção.
+        Neste capitulo garantiremos que models.UserModel.Exists() funciona corretamente.
+
+        Test database setup and teardown
+
+            Criar o banco de dados 'test_snippetbox' e usuário 'test_web'.
+
+                CREATE DATABASE test_snippetbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+                CREATE USER 'test_web'@'localhost';
+                GRANT CREATE, DROP, ALTER, INDEX, SELECT, INSERT, UPDATE, DELETE ON test_snippetbox.* TO 'test_web'@'localhost';
+                ALTER USER 'test_web'@'localhost' IDENTIFIED BY 'pass';
+            
+            Criar dois scripts SQL:
+                1 - 'Setup Script' para criar o banco de dados e inserir dados de teste nele.
+                2 - 'Teardown Script' para destruir as tabelas e dados do banco de teste.
+            
+                A ideia é executar estes scripts no inicio(Setup Script) e no final(Teardown Script) de cada teste de integração.
+                Isso garante que o banco de dados de teste sempre estará no mesmo estado quando o teste for iniciado.
+
+                Criar os script setup.sql e teardown.sql em internal/models/testdata.
+
+            Criar o helper newTestDB() em internal/models/testutils_test.go.
+            O que newTestDB() faz:
+                - Cria uma novo connection pool(*sql.DB) para os testes
+                - Executa setup.sql
+                - Registra uma função 'Cleanup' que executará o teardown.sql e db.Close() quando o teste terminar
+            
+        Testing the UserModel.Exists method
+
+            Sabendo que o script setup.sql insere um usuário com ID 1 e EMAIL alice@example.com.
+                - Ao chamar models.UserModel.Exists(1) retorna true e error igual a nil
+                - Ao chamar models.UserModel.Exists() com qualquer outro ID deve retornar falso e error igual a nil
+            
+            Criar um novo assert em internal/assert/assert.go para verificar se o error é nil.
+
+                func NilError(t *testing.T, actual error) {
+                    t.Helper()
+
+                    if actual != nil {
+                        t.Errorf("got: %v; expected: nil", actual)
+                    }
+                }
+            
+            Criar o teste TestUserModelExists no novo arquivo internal/models/users_test.go.
+    
+        Skipping long-running tests
+
+            É possível ignorar testes usando flags de linha de comando.
+            Uma maneira idiomatica de fazer isso é através da função testing.Short().
+            A função verifica se a flag -short foi fornecida ou não.
+            Quando -short é fornecido a função t.Skip() é chamada para pular o teste.
+
+                // Skip the test if the "-short" flag is provided when running the test.
+                if testing.Short() {
+                    t.Skip("models: skipping integration test")
+                }
+            
+                // executa todos os testes
+                go test -v ./...
+                    === RUN   TestUserModelExists
+                    === RUN   TestUserModelExists/Valid_ID
+                    === RUN   TestUserModelExists/Zero_ID
+                    === RUN   TestUserModelExists/Non-existent_ID
+                    --- PASS: TestUserModelExists (0.14s)
+                        --- PASS: TestUserModelExists/Valid_ID (0.06s)
+                        --- PASS: TestUserModelExists/Zero_ID (0.04s)
+                        --- PASS: TestUserModelExists/Non-existent_ID (0.05s)
+                    PASS
+                    ok      snippetbox.claumann.net/internal/models 0.148s
+
+                // pula o teste TestUserModelExists(t *testing.T).
+                go test -v -short ./...
+                    === RUN   TestUserModelExists
+                        users_test.go:12: models: skipping integration test
+                    --- SKIP: TestUserModelExists (0.00s)
+                    PASS
+                    ok      snippetbox.claumann.net/internal/models 0.004s
