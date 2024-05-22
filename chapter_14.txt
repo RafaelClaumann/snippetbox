@@ -546,3 +546,21 @@ Chater 14 Testing
                 - Cria uma novo connection pool(*sql.DB) para os testes
                 - Executa setup.sql
                 - Registra uma função 'Cleanup' que executará o teardown.sql e db.Close() quando o teste terminar
+            
+        Testing the UserModel.Exists method
+
+            Sabendo que o script setup.sql insere um usuário com ID 1 e EMAIL alice@example.com.
+                - Ao chamar models.UserModel.Exists(1) retorna true e error igual a nil
+                - Ao chamar models.UserModel.Exists() com qualquer outro ID deve retornar falso e error igual a nil
+            
+            Criar um novo assert em internal/assert/assert.go para verificar se o error é nil.
+
+                func NilError(t *testing.T, actual error) {
+                    t.Helper()
+
+                    if actual != nil {
+                        t.Errorf("got: %v; expected: nil", actual)
+                    }
+                }
+            
+            Criar o teste TestUserModelExists no novo arquivo internal/models/users_test.go.
