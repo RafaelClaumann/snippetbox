@@ -26,12 +26,14 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	debug          bool
 }
 
 func main() {
 	// Define a new command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "root:pass@/snippetbox?parseTime=true", "MySQL data source name")
 	addr := flag.String("addr", ":4000", "HTTP network address")
+	isDebugMode := flag.Bool("debug", false, "enable debug logs")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -67,6 +69,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		debug:          *isDebugMode,
 	}
 
 	tlsConfig := &tls.Config{
