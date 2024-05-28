@@ -26,7 +26,7 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
-	isDebugMode    bool
+	debug          bool
 }
 
 func main() {
@@ -69,7 +69,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
-		isDebugMode:    *isDebugMode,
+		debug:          *isDebugMode,
 	}
 
 	tlsConfig := &tls.Config{
