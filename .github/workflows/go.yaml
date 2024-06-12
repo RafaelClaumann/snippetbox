@@ -14,15 +14,10 @@ jobs:
           go-version: '1.21.x'
           
       - name: Install dependencies
-        run: |
-          cd cmd/web
-          go get .
+        run: go get -u -d ./...
 
       - name: Build
-        run: |
-          cd cmd/web
-          go build -v 
-          ls -l
+        run: go build -v ./...
 
       - name: Test with the Go CLI
         run: go test ./... -v
