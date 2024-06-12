@@ -402,6 +402,7 @@ func TestSnippetCreate(t *testing.T) {
 		// Make a GET /user/login request and extract the CSRF token from the response.
 		_, _, body := ts.get(t, "/user/login")
 		csrfToken := extractCSRFToken(t, body)
+		println(body)
 
 		// Make a POST /user/login request using the extracted CSRF token and credentials from our the mock user model.
 		form := url.Values{}
