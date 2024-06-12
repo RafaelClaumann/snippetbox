@@ -1,8 +1,6 @@
 package mocks
 
 import (
-	"fmt"
-
 	"snippetbox.claumann.net/internal/models"
 )
 
@@ -28,7 +26,6 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 func (m *UserModel) Exists(id int) (bool, error) {
 	switch id {
 	case 1:
-		fmt.Println("inside exists")
 		return true, nil
 	default:
 		return false, nil

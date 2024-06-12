@@ -187,7 +187,6 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userLoginForm{}
 
-	fmt.Println("calling login")
 	app.render(w, http.StatusOK, "login.tmpl", data)
 }
 
