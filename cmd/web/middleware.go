@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/justinas/nosurf"
@@ -22,6 +23,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		// Otherwise, we check to see if a user with that ID exists in our
 		// database.
+		log.Println("calling exist")
 		exists, err := app.users.Exists(id)
 		if err != nil {
 			app.serverError(w, err)
