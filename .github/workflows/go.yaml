@@ -6,6 +6,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql database: 'test_snippetbox' # Optional, default value is "test". The specified database which will be create
+          mysql root password: 'pass'
+
       - uses: actions/checkout@v4
 
       - name: Setup Go
@@ -26,4 +31,4 @@ jobs:
         run: |
           echo $PWD
           ls -l
-          go test -short -v ./...
+          go test -v ./...
