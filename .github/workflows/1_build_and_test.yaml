@@ -1,4 +1,4 @@
-name: Go
+name: '[1] Build and Test'
 on: [push]
 
 jobs:
@@ -6,9 +6,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout GitHub
+        uses: actions/checkout@v4
 
-      - uses: mirromutth/mysql-action@v1.1
+      - name: Start MySQL
+        uses: mirromutth/mysql-action@v1.1
         with:
           character set server: 'utf8mb4'
           collation server: 'utf8mb4_unicode_ci'
@@ -20,7 +22,7 @@ jobs:
         with:
           go-version: '1.21.x'
           
-      - name: Install dependencies
+      - name: Install Dependencies
         run: go get -d -v ./...
 
       - name: Build
