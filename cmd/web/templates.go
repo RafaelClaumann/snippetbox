@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"snippetbox.claumann.net/internal/models"
@@ -40,7 +43,12 @@ var functions = template.FuncMap{
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
+	_, b, _, _ := runtime.Caller(0)
+	paths := strings.Split(b, "/")
+	templatePath := strings.Join(paths[0:len(paths)-3], "/")
+	fmt.Println("templatePath: " + templatePath)
+
+	pages, err := filepath.Glob(templatePath + "/ui/html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +60,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// call the ParseFiles() method. This means we have to use template.New() to
 		// create an empty template set, use the Funcs() method to register the
 		// template.FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
+		ts, err := template.New(name).Funcs(functions).ParseFiles(templatePath + "/ui/html/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
 
 		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl")
+		ts, err = ts.ParseGlob(templatePath + "/ui/html/partials/*.tmpl")
 		if err != nil {
 			return nil, err
 		}
