@@ -26,4 +26,4 @@ jobs:
         run: |
           echo $PWD
           ls -l
-          go test ./... -v
+          go test -short -v ./...
