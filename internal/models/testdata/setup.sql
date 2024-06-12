@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS test_snippetbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- CREATE DATABASE test_snippetbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE snippets (
     id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
