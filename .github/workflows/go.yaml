@@ -24,6 +24,4 @@ jobs:
           go build -v 
 
       - name: Test with the Go CLI
-        run: |
-          cd cmd/web
-          go test -v
+        run: go test ./... -v
