@@ -7,16 +7,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21.x'
           
       - name: Install dependencies
-        run: go get .
+        run: |
+          cd cmd/web
+          go get .
 
       - name: Build
-        run: go build -v ./...
+        run: |
+          cd cmd/web
+          go build -v ./...
 
       - name: Test with the Go CLI
-        run: go test -v
+        run: |
+          cd cmd/web
+          go test -v
