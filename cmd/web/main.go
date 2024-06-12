@@ -90,10 +90,10 @@ func main() {
 
 	_, filePath, _, _ := runtime.Caller(0)
 	paths := strings.Split(filePath, "/")
-	certPath := strings.Join(paths[0:len(paths)-3], "/")
+	certsPath := strings.Join(paths[0:len(paths)-3], "/")
 
 	infoLog.Printf("Starting server on %s", *addr)
-	err = srv.ListenAndServeTLS(certPath+"/tls/cert.pem", certPath+"/tls/key.pem")
+	err = srv.ListenAndServeTLS(certsPath+"/tls/cert.pem", certsPath+"/tls/key.pem")
 	errorLog.Fatal(err)
 }
 
