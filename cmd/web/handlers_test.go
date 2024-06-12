@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -267,6 +269,119 @@ func TestUserSignup(t *testing.T) {
 			if tt.wantFormTag != "" {
 				assert.StringContains(t, body, tt.wantFormTag)
 			}
+		})
+	}
+}
+
+func TestSnippetCreateValidSubmissionChangingContext(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	ts.Config.ConnContext = func(ctx context.Context, c net.Conn) context.Context {
+		return context.WithValue(ctx, isAuthenticatedContextKey, true)
+	}
+
+	_, _, body := ts.get(t, "/snippet/create")
+	validCSRFToken := extractCSRFToken(t, body)
+
+	form := url.Values{}
+	form.Add("title", "snippet_title")
+	form.Add("content", "snippet_content")
+	form.Add("expires", "7")
+	form.Add("csrf_token", validCSRFToken)
+
+	code, _, _ := ts.postForm(t, "/snippet/create", form)
+
+	assert.Equal(t, code, http.StatusSeeOther)
+}
+
+func TestSnippetCreateTableDrivenInvalidSubmissionChangingContext(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	ts.Config.ConnContext = func(ctx context.Context, c net.Conn) context.Context {
+		return context.WithValue(ctx, isAuthenticatedContextKey, true)
+	}
+
+	_, _, body := ts.get(t, "/snippet/create")
+	validCSRFToken := extractCSRFToken(t, body)
+
+	const (
+		validTitle   = "valid_title"
+		validContent = "valid_content"
+		validExpires = "7"
+	)
+
+	tests := []struct {
+		name         string
+		title        string
+		content      string
+		expires      string
+		csrfToken    string
+		wantCode     int
+		errorMessage string
+	}{
+		{
+			name:         "Invalid CSRF token",
+			title:        validTitle,
+			content:      validContent,
+			expires:      validExpires,
+			csrfToken:    "wrongToken",
+			wantCode:     http.StatusBadRequest,
+			errorMessage: "Bad Request",
+		},
+		{
+			name:         "Title with more than 100 characters",
+			title:        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			content:      validContent,
+			expires:      validExpires,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			errorMessage: "This field cannot be more than 100 characters long",
+		},
+		{
+			name:         "Empty title",
+			title:        "",
+			content:      validContent,
+			expires:      validExpires,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			errorMessage: "This field cannot be blank",
+		},
+		{
+			name:         "Empty content",
+			title:        validTitle,
+			content:      "",
+			expires:      validExpires,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			errorMessage: "This field cannot be blank",
+		},
+		{
+			name:         "Wrong expires",
+			title:        validTitle,
+			content:      validContent,
+			expires:      "293829",
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			errorMessage: "This field must equal 1, 7 or 365",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			form := url.Values{}
+			form.Add("title", tt.title)
+			form.Add("content", tt.content)
+			form.Add("expires", tt.expires)
+			form.Add("csrf_token", tt.csrfToken)
+
+			code, _, body := ts.postForm(t, "/snippet/create", form)
+
+			assert.Equal(t, code, tt.wantCode)
+			assert.StringContains(t, body, tt.errorMessage)
 		})
 	}
 }
