@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"path/filepath"
 	"runtime"
@@ -43,12 +42,11 @@ var functions = template.FuncMap{
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	_, b, _, _ := runtime.Caller(0)
-	paths := strings.Split(b, "/")
-	templatePath := strings.Join(paths[0:len(paths)-3], "/")
-	fmt.Println("templatePath: " + templatePath)
+	_, filePath, _, _ := runtime.Caller(0)
+	splitedPath := strings.Split(filePath, "/")
+	templatesPath := strings.Join(splitedPath[0:len(splitedPath)-3], "/")
 
-	pages, err := filepath.Glob(templatePath + "/ui/html/pages/*.tmpl")
+	pages, err := filepath.Glob(templatesPath + "/ui/html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +58,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// call the ParseFiles() method. This means we have to use template.New() to
 		// create an empty template set, use the Funcs() method to register the
 		// template.FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles(templatePath + "/ui/html/base.tmpl")
+		ts, err := template.New(name).Funcs(functions).ParseFiles(templatesPath + "/ui/html/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
 
 		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob(templatePath + "/ui/html/partials/*.tmpl")
+		ts, err = ts.ParseGlob(templatesPath + "/ui/html/partials/*.tmpl")
 		if err != nil {
 			return nil, err
 		}
