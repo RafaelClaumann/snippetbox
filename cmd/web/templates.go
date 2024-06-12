@@ -39,7 +39,7 @@ var functions = template.FuncMap{
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
-	filePath := "/home/runner/work/snippetbox/snippetbox"
+	filePath := "/home/runner/work/snippetbox/snippetbox/ui"
 
 	pages, err := filepath.Glob(filePath + "/html/pages/*.tmpl")
 	if err != nil {
