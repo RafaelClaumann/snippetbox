@@ -39,8 +39,9 @@ var functions = template.FuncMap{
 
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
+	filePath := "/home/rafaelcb/Documentos/Projetos/snippetbox/ui"
 
-	pages, err := filepath.Glob("/html/pages/*.tmpl")
+	pages, err := filepath.Glob(filePath + "/html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +53,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// call the ParseFiles() method. This means we have to use template.New() to
 		// create an empty template set, use the Funcs() method to register the
 		// template.FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("/html/base.tmpl")
+		ts, err := template.New(name).Funcs(functions).ParseFiles(filePath + "/html/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
 
 		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("/html/partials/*.tmpl")
+		ts, err = ts.ParseGlob(filePath + "/html/partials/*.tmpl")
 		if err != nil {
 			return nil, err
 		}
