@@ -131,7 +131,7 @@ func extractCSRFToken(t *testing.T, body string) string {
 	// positions.
 	matches := csrfTokenRX.FindStringSubmatch(body)
 	if len(matches) < 2 {
-		t.Fatal("no csrf token found in body")
+		t.Fatal("no csrf token found in body", body)
 	}
 
 	// Go’s html/template package automatically escapes all dynamically rendered data including our CSRF token.

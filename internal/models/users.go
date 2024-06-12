@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -97,6 +98,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 
 // We'll use the Exists method to check if a user exists with a specific ID.
 func (m *UserModel) Exists(id int) (bool, error) {
+	log.Println("using implementation")
 	var exists bool
 	stmt := `SELECT EXISTS(SELECT true FROM users WHERE id = ?)`
 	err := m.DB.QueryRow(stmt, id).Scan(&exists)
