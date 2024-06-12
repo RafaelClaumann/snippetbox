@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/scs/mysqlstore"
@@ -86,8 +88,12 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
+	_, b, _, _ := runtime.Caller(0)
+	paths := strings.Split(b, "/")
+	templatePath := strings.Join(paths[0:len(paths)-3], "/")
+
 	infoLog.Printf("Starting server on %s", *addr)
-	err = srv.ListenAndServeTLS("/tls/cert.pem", "/tls/key.pem")
+	err = srv.ListenAndServeTLS(templatePath+"/tls/cert.pem", templatePath+"/tls/key.pem")
 	errorLog.Fatal(err)
 }
 
