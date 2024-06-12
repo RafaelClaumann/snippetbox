@@ -87,8 +87,7 @@ func main() {
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
-	filePath := "/home/runner/work/snippetbox/snippetbox"
-	err = srv.ListenAndServeTLS(filePath+"/tls/cert.pem", filePath+"/tls/key.pem")
+	err = srv.ListenAndServeTLS("/tls/cert.pem", "/tls/key.pem")
 	errorLog.Fatal(err)
 }
 
