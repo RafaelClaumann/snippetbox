@@ -15,6 +15,7 @@ type UserModelInterface interface {
 	Insert(name, email, password string) error
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
+	Get(id int) (*User, error)
 }
 
 // Define a new User type. Notice how the field names and types align
@@ -63,6 +64,23 @@ func (m *UserModel) Insert(name, email, password string) error {
 	}
 
 	return nil
+}
+
+func (m *UserModel) Get(id int) (*User, error) {
+	stmt := `SELECT name, email, created FROM users WHERE id = ?`
+	var row *sql.Row = m.DB.QueryRow(stmt, id)
+
+	u := &User{}
+	err := row.Scan(&u.Name, &u.Email, &u.Created)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return u, err
 }
 
 // We'll use the Authenticate method to verify whether a user exists with
