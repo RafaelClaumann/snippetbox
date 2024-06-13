@@ -269,7 +269,7 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	user, err := app.users.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 		} else {
 			app.serverError(w, err)
 		}
