@@ -33,6 +33,12 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
+type accountData struct {
+	Name   string
+	Email  string
+	Joined string
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Because httprouter matches the "/" path exactly, we can now remove the
 	// manual check of r.URL.Path != "/" from this handler.
@@ -266,6 +272,12 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
+	data.Form = accountData{
+		Name:   "username",
+		Email:  "email@email.com",
+		Joined: "21 apr 2022 at 14:43",
+	}
+
 	app.render(w, http.StatusOK, "account.tmpl", data)
 }
 
