@@ -34,6 +34,8 @@ func (app *application) routes() http.Handler {
 	// middleware chain which includes the requireAuthentication middleware.
 	protected := dynamic.Append(app.requireAuthentication)
 
+	router.Handler(http.MethodGet, "/account/password/update", protected.ThenFunc(app.updatePassword))
+	router.Handler(http.MethodPost, "/account/password/update", protected.ThenFunc(app.updatePasswordPost))
 	router.Handler(http.MethodGet, "/account/view", protected.ThenFunc(app.accountView))
 	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
 	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))

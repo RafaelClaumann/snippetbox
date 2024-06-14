@@ -290,6 +290,16 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "account.tmpl", data)
 }
 
+func (app *application) updatePassword(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "password.tmpl", data)
+}
+
+func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "password.tmpl", data)
+}
+
 func health(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
