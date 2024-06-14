@@ -34,9 +34,10 @@ type userLoginForm struct {
 }
 
 type updatePasswordForm struct {
-	Current      string `form:"current"`
-	New          string `form:"new"`
-	Confirmation string `form:"confirmation"`
+	Current             string `form:"current"`
+	New                 string `form:"new"`
+	Confirmation        string `form:"confirmation"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -309,6 +310,19 @@ func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Reques
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Current), "current", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.New), "new", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Confirmation), "confirmation", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.New, 8), "new", "This field must be at least 8 characters long")
+	form.CheckField(validator.MinChars(form.Confirmation, 8), "confirmation", "This field must be at least 8 characters long")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
 		return
 	}
 
