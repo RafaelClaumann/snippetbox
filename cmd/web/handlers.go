@@ -33,6 +33,12 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
+type updatePasswordForm struct {
+	Current      string `form:"current"`
+	New          string `form:"new"`
+	Confirmation string `form:"confirmation"`
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Because httprouter matches the "/" path exactly, we can now remove the
 	// manual check of r.URL.Path != "/" from this handler.
@@ -292,11 +298,34 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) updatePassword(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
+	data.Form = updatePasswordForm{}
+
 	app.render(w, http.StatusOK, "password.tmpl", data)
 }
 
 func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Request) {
+	var form updatePasswordForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	if (form.New != form.Confirmation) || (form.New == form.Current) {
+		http.Redirect(w, r, "/account/password/update", http.StatusSeeOther)
+		return
+	}
+
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	err = app.users.UpdatePassword(id, form.Current, form.New)
+	if err != nil {
+		http.Redirect(w, r, "/account/password/update", http.StatusSeeOther)
+		return
+	}
+
 	data := app.newTemplateData(r)
+	data.Form = form
 	app.render(w, http.StatusOK, "password.tmpl", data)
 }
 
