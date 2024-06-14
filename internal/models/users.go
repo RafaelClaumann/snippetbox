@@ -16,6 +16,7 @@ type UserModelInterface interface {
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
 	Get(id int) (*User, error)
+	UpdatePassword(id int, currentPassword, newPassword string) error
 }
 
 // Define a new User type. Notice how the field names and types align
@@ -67,11 +68,11 @@ func (m *UserModel) Insert(name, email, password string) error {
 }
 
 func (m *UserModel) Get(id int) (*User, error) {
-	stmt := `SELECT name, email, created FROM users WHERE id = ?`
+	stmt := `SELECT name, email, created, hashed_password FROM users WHERE id = ?`
 	var row *sql.Row = m.DB.QueryRow(stmt, id)
 
 	u := &User{}
-	err := row.Scan(&u.Name, &u.Email, &u.Created)
+	err := row.Scan(&u.Name, &u.Email, &u.Created, &u.HashedPassword)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -112,6 +113,32 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 
 	// Otherwise, the password is correct. Return the user ID.
 	return id, nil
+}
+
+func (m *UserModel) UpdatePassword(id int, currentPassword, newPassword string) error {
+	user, err := m.Get(id)
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword(user.HashedPassword, []byte(currentPassword))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return ErrInvalidCredentials
+		} else {
+			return err
+		}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	stmt := `UPDATE users SET hashed_password = ? WHERE id = ?`
+	_, err = m.DB.Exec(stmt, hashedPassword, id)
+
+	return err
 }
 
 // We'll use the Exists method to check if a user exists with a specific ID.
