@@ -42,7 +42,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return 0, models.ErrInvalidCredentials
 }
 
-func (m *UserModel) UpdatePassword(id int, current, new string) error {
+func (m *UserModel) UpdatePassword(id int, currentPassword, newPassword string) error {
 	switch id {
 	case 1:
 		return models.ErrNoRecord

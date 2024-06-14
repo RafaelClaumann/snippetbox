@@ -16,7 +16,7 @@ type UserModelInterface interface {
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
 	Get(id int) (*User, error)
-	UpdatePassword(id int, current, new string) error
+	UpdatePassword(id int, currentPassword, newPassword string) error
 }
 
 // Define a new User type. Notice how the field names and types align
@@ -115,13 +115,13 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return id, nil
 }
 
-func (m *UserModel) UpdatePassword(id int, current, new string) error {
+func (m *UserModel) UpdatePassword(id int, currentPassword, newPassword string) error {
 	user, err := m.Get(id)
 	if err != nil {
 		return err
 	}
 
-	err = bcrypt.CompareHashAndPassword(user.HashedPassword, []byte(current))
+	err = bcrypt.CompareHashAndPassword(user.HashedPassword, []byte(currentPassword))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return ErrInvalidCredentials
@@ -130,7 +130,7 @@ func (m *UserModel) UpdatePassword(id int, current, new string) error {
 		}
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(new), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
 	if err != nil {
 		return err
 	}
