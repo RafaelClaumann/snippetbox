@@ -6,6 +6,7 @@
 
 ## Table of Contents
 
+- [Demo](#demo)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -13,6 +14,9 @@
 - [Technologies Used](#technologies-used)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Demo
+![](https://github.com/RafaelClaumann/snippetbox/blob/main/demo_snippetbox.gif)
 
 ## Features
 
