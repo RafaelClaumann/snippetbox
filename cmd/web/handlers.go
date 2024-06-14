@@ -315,19 +315,16 @@ func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Reques
 
 	form.CheckField(validator.NotBlank(form.CurrentPassword), "current", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.NewPassword), "new", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "confirmation", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.NewPassword, 8), "new", "This field must be at least 8 characters long")
+	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "confirmation", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.NewPasswordConfirmation, 8), "confirmation", "This field must be at least 8 characters long")
+	form.CheckField(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
+	form.CheckField(form.NewPassword == form.CurrentPassword, "newPasswordEquality", "New password must be different from the current password")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
-		return
-	}
-
-	if (form.NewPassword != form.NewPasswordConfirmation) || (form.NewPassword == form.CurrentPassword) {
-		http.Redirect(w, r, "/account/password/update", http.StatusSeeOther)
 		return
 	}
 
