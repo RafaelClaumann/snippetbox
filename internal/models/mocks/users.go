@@ -42,6 +42,17 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return 0, models.ErrInvalidCredentials
 }
 
+func (m *UserModel) UpdatePassword(id int, current, new string) error {
+	switch id {
+	case 1:
+		return models.ErrNoRecord
+	case 2:
+		return models.ErrInvalidCredentials
+	default:
+		return nil
+	}
+}
+
 func (m *UserModel) Exists(id int) (bool, error) {
 	switch id {
 	case 1:
