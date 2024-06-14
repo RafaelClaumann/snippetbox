@@ -319,7 +319,7 @@ func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Reques
 	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "confirmation", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.NewPasswordConfirmation, 8), "confirmation", "This field must be at least 8 characters long")
 	form.CheckField(form.NewPassword == form.NewPasswordConfirmation, "newPasswordConfirmation", "Passwords do not match")
-	form.CheckField(form.NewPassword == form.CurrentPassword, "newPasswordEquality", "New password must be different from the current password")
+	form.CheckField(form.NewPassword != form.CurrentPassword, "newPasswordEquality", "New password must be different from the current password")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -331,13 +331,21 @@ func (app *application) updatePasswordPost(w http.ResponseWriter, r *http.Reques
 	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 	err = app.users.UpdatePassword(id, form.CurrentPassword, form.NewPassword)
 	if err != nil {
-		http.Redirect(w, r, "/account/password/update", http.StatusSeeOther)
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddFieldError("currentPassword", "Current password is incorrect")
+
+			data := app.newTemplateData(r)
+			data.Form = form
+
+			app.render(w, http.StatusUnprocessableEntity, "password.tmpl", data)
+		} else if err != nil {
+			app.serverError(w, err)
+		}
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Form = form
-	app.render(w, http.StatusOK, "password.tmpl", data)
+	app.sessionManager.Put(r.Context(), "flash", "Your password has been updated!")
+	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
 }
 
 func health(w http.ResponseWriter, r *http.Request) {
