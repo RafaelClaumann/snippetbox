@@ -95,7 +95,7 @@ Once the application is running, you can access it via `https://localhost:4000`.
 - **MySQL**: Used for storing user and snippet data.
 - **HTML/CSS/JavaScript**: For the front-end interface.
 - **Docker**: To facilitate containerization and deployment.
-- **GitHub Actions**: To emulate a CI(Continuous Integration) environment
+- **GitHub Actions**: To create CI(Continuous Integration).
 
 ## Contributing
 
